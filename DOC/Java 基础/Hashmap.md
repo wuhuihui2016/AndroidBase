@@ -1,0 +1,42 @@
+# Hashmap
+HashMap基于AbstractMap类，实现了Map、Cloneable（能被克隆）、Serializable（支持序列化）接口； 非线程安全；
+允许存在一个为null的key和任意个为null的value；采用链表散列的数据结构，即数组和链表的结合；初始容量为16，填充因子默认为0.75，扩容时是当前容量翻倍，即2capacity
+Hashtable基于Map接口和Dictionary类；线程安全，开销比HashMap大，如果多线程访问一个Map对象，使用Hashtable更好；不允许使用null作为key和value；
+底层基于哈希表结构；初始容量为11，填充因子默认为0.75，扩容时是容量翻倍+1，即2capacity+1
+
+一、HashMap、 HashTable、HashSet的异同
+  转载文章：HashSet HashTable HashMap的区别 及其Java集合介绍 - ywl925 - 博客园
+  ①HashSet是Set的一个实现类，HashMap是Map的一个实现类，同时HashMap是HashTable的替代品
+  ②HashSet以对象作为元素，而HashMap以(key-value)的一组对象作为元素，且HashSet拒绝接受重复的对象。HashMap可以看作三个视图：key的Set，value的Collection，Entry的Set。 这里HashSet就是其实就是HashMap的一个视图。
+   HashSet内部就是使用HashMap实现的，和HashMap不同的是它不需要Key和Value两个值。
+   HashMap是一个数组和链表的结合体，新加入的放在链头，重复的key不同的alue被新value替代
+  ③继承不同
+   public class Hashtable extends Dictionary<> implements Map<>
+   public class HashMap  extends AbstractMap<> implements Map<>
+  ④HashTable 方法同步，而HashMap需要自己增加同步处理。
+  ⑤HashTable中，key和value都不允许出现null值。
+   在HashMap中，null可以作为键，这样的键只有一个；可以有一个或多个键所对应的值为null。用containsKey()方法来判断是否存在某个键。
+  ⑥两个遍历方式的内部实现上不同。
+   HashTable、HashMap都使用了 Iterator。而由于历史原因，HashTable还使用了Enumeration的方式。
+  ⑦哈希值的使用不同
+   HashTable直接使用对象的hashCode，HashTable中hash数组默认大小是11，增加的方式是 old*2+1。
+   而HashMap重新计算hash值，HashMap中hash数组的默认大小是16，而且一定是2的指数。
+
+二、为什么HashMap线程不安全（hash碰撞与扩容导致）
+  HashMap的底层存储结构是一个Entry数组，每个Entry又是一个单链表，一旦发生Hash冲突的的时候，HashMap采用拉链法解决碰撞冲突，
+  因为hashMap的put方法不是同步的，所以他的扩容方法也不是同步的，在扩容过程中，会新生成一个新的容量的数组，然后对原数组的
+  所有键值对重新进行计算和写入新的数组，之后指向新生成的数组。当多个线程同时检测到hashmap需要扩容的时候就会同时调用resize操作，
+  各自生成新的数组并rehash后赋给该map底层的数组table，结果最终只有最后一个线程生成的新数组被赋给table变量，其他线程的均会丢失。
+  而且当某些线程已经完成赋值而其他线程刚开始的时候，就会用已经被赋值的table作为原始数组，这样也会有问题。扩容的时候 可能会引发链表形成环状结构
+
+三、如何实现HashMap线程同步？
+  ①使用 java.util.Hashtable 类，此类是线程安全的。
+  ②使用 java.util.concurrent.ConcurrentHashMap，此类是线程安全的。
+  ③使用 java.util.Collections.synchronizedMap() 方法包装 HashMap object，得到线程安全的Map，并在此Map上进行操作。
+
+四、HashMap是有序的吗？如何实现有序？
+  HashMap是无序的，而LinkedHashMap是有序的HashMap，默认为插入顺序，还可以是访问顺序，基本原理是其内部通过Entry维护了一个双向链表，负责维护Map的迭代顺序
+
+五、HashMap是如何扩容的？如何避免扩容？
+  HashMap几个默认值，初始容量为16、填充因子默认为0.75、扩容时容量翻倍。也就是说当HashMap中元素个数超过16*0.75=12时会把数组的大小扩展为2*16=32，然后重新计算每个元素在数组中的位置
+  由于每次扩容还需要重新计算元素Hash值，损耗性能，所以建议在使用HashMap时，最好先估算Map的大小，设置初始值，避免频繁扩容

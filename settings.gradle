@@ -1,0 +1,3 @@
+include ':testjar'
+include ':app'
+rootProject.name = "AndroidBase"
