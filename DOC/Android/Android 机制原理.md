@@ -57,6 +57,38 @@
    2、一个应用允许多个进程，在清单文件配置的service为一个进程，Android:process就可以配置；
    3、多进程会引起的异常：静态成员和单例模式会失效，线程同步机制完全失效，SharedPreferences可靠性下降，Application会多次创建。
 
+   【扩展】多进程通信【https://www.jianshu.com/p/84a12977dc26】
+        1、Android中支持的多进程通信方式：
+          系统实现。
+          AIDL（Android Interface Definition Language，Android接口定义语言）：大部分应用程序不应该使用AIDL去创建一个绑定服务，
+              因为它需要多线程能力，并可能导致一个更复杂的实现。功能强大，支持进程间一对多的实时并发通信，并可实现 RPC (远程过程调用)。
+          Messenger：支持一对多的串行实时通信， AIDL 的简化版本。利用Handler实现。（适用于多进程、单线程，不需要考虑线程安全），其底层基于AIDL。【方法简易、可实战】
+          Bundle：四大组件的进程通信方式，只能传输 Bundle 支持的数据类型。
+          ContentProvider：强大的数据源访问支持，主要支持 CRUD 操作，一对多的进程间数据共享，例如我们的应用访问系统的通讯录数据。
+          BroadcastReceiver：即广播，但只能单向通信，接收者只能被动的接收消息。
+          文件共享：在非高并发情况下共享简单的数据。
+          Socket：通过网络传输数据。
+        2、多进程引发的问题：
+         不能内存共享，如：静态成员和单例模式失效
+         线程同步机制失效
+         SharedPreferences 可靠性降低，在主进程中往sharePreference存的值，在子进程不能立即可见。
+              【https://blog.csdn.net/u013394527/article/details/80775899】
+              解决方法：使用SharedPreferences时，SharedPreferences 在MODE_PRIVATE MODE_PUBLIC 之外其实还可以设置多进程的Flag，即 MODE_MULTI_PROCESS。
+              SharedPreferences myPrefs = context.getSharedPreferences(MY_FILE_NAME, Context.MODE_MULTI_PROCESS | Context.MODE_PRIVATE);
+              一旦我们设置了这个Flag，每次调用Context.getSharedPreferences 的时候系统会重新从SP文件中读入数据，因此我们在使用的时候每次读取和存入都要使用Context.getSharedPreferences 重新获取SP实例。即使是这样，由于SP本质上并不是多进程安全的，所以还是无法保证数据的同步，因此该方法我们并没有使用，我们也不推荐使用。
+         Application 被多次创建
+         文件共享问题，可能造成资源的竞争访问，导致诸如数据库损坏、数据丢失等
+         调试麻烦
+
+
+      Messenger使用方法：【https://www.cnblogs.com/ldq2016/p/8417692.html】
+      服务实现一个Handler，由其接收来自客户端的每个调用的回调。
+      Handler用于创建Messenger对象（对Handler的引用）。
+      Messenger创建一个IBinder，服务通过onBind()使其返回客户端。
+      客户端使用IBinder将Messenger（引用服务的Handler）实例化，然后使用后者将Message对象发送给服务。
+      服务在其Handler中（具体地讲，是在handleMessage()方法中）接收每个Message。
+
+
 十二、CPU
    是一个有多功能的优秀领导者，它的优点在于调度、管理、协调能力强，计算能力则位于其次，而GPU相当于一个能接受CPU调度的
    “拥有强大计算能力”的员工，GPU提供了多核并行计算的基础结构，且核心数非常多，可支撑大量数据的并行操作，拥有更高的访存速度，更高的浮点运算能力。
