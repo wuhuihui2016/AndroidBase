@@ -47,3 +47,12 @@
      通过阅读源码会发现，当targetSdkVersion小于3时onSaveInstanceState是在onPause方法中调用的，而大于3时是在onStop方法中调用的。
      而onRestoreInstanceState是在onStart之后、onResume之前调用的。
    8.生命周期对应的代码有：onStart()、onStop();onCreate()、onDestory();onResume()、onPause();onCreateView()、onDestoryView()
+   9.当android通过杀进程的APP杀死进程后，会执行ondestroy方法，当ondestroy方法执行完成后才彻底杀死进程！
+     注意：点击按钮清理后台数据的时候每一个activity都会执行ondestroy，但是通过滑动卡片删除应用杀死进程的时候，或者通过应用管理杀死进程的时候，只有栈里面的第一个没有销毁的activity执行ondestroy方法，一般都是mainActivity，其它activity均不执行ondestroy。
+   10.什么情况onDestory会被调用？
+     1.一般你点击系统的返回键就会杀死当前的Activity，这个时候onDestory就被调用了。
+     2.要么就你主要的去调用finish()方法，activity也会ondestroy。
+     3.在极端的情况下，系统内存不足的情况也会根据优先级来杀死一些Activity,这个时候他们的ondestory()方法也会被调用。
+     4.利用intent跳转时加入一些启动标识，如CLEAN_TASK之类的也会导致一些acitivity被销毁，ondestory()触发
+     【值得说明的是点击系统的home键回到桌面的时候，onDestory()是没有触发的。】
+     【finish();后调用System.exit(0)，onDestory()不会被调用】

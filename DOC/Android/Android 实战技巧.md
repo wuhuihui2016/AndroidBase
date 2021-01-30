@@ -7,6 +7,32 @@
       ④借助外部工具（SharedPreference、SQLite、File、剪贴板）；⑤借助Service。
 
 二、SQLite 升级而不影响现有数据，DBHelper单例，在OnUpgrade()方法中判断oldVersion对数据库进行增删改查以实现数据库升级。
+    插入大量数据时提速方法：开一个事务能提高一些速度。
+     /**
+         * 插入一组数据.
+         *
+         * @param values    数据键值对.
+         * @param tableName 表名.
+         */
+        public int insert(ContentValues values[], String tableName) {
+            int flag = 0;
+            db = getWritableDatabase();
+            db.beginTransaction(); //开启事务*****
+            try {
+                for (int i = 0; i < values.length; i++) {
+                    db.insert(tableName, null, values[i]);
+                }
+                db.setTransactionSuccessful();
+            } catch (Exception e) {
+                e.printStackTrace();
+                flag = -1;
+            } finally {
+                db.endTransaction();
+                db.close();
+            }
+            return flag;
+        }
+
 
 三、性能优化技巧
     启动速度优化，布局优化，内存、电量、APP大小优化、列表滑动优化等等。

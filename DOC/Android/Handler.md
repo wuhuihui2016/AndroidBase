@@ -44,6 +44,7 @@
 
 14、使用Hanlder的postDealy()后消息队列会发生什么变化？
   postDelay的Message并不是先等待一定时间再放入到MessageQueue中，而是直接进入并阻塞当前线程，然后将其delay的时间和队头的进行比较，按照触发时间进行排序，如果触发时间更近则放入队头，保证队头的时间最小、队尾的时间最大。此时，如果队头的Message正是被delay的，则将当前线程堵塞一段时间，直到等待足够时间再唤醒执行该Message，否则唤醒后直接执行。
+  handler.post和handler.sendMessage的区别? post本质上还是用sendMessage实现的，post只是一种更方便的用法
 
 15、Android中还了解哪些方便线程切换的类？
   AsyncTask：底层封装了线程池和Handler，便于执行后台任务以及在子线程中进行UI操作。
@@ -102,9 +103,14 @@
         方法A: return Looper.getMainLooper() == Looper.myLooper(); //通过Looper.getMainLooper()比较
         方法B: return Thread.currentThread() == Looper.getMainLooper().getThread(); //通过Looper.getMainLooper().getThread()比较
         方法C: return Looper.getMainLooper().getThread().getId() == Thread.currentThread().getId(); //通过Looper.getMainLooper().getThread()比较
+        方法D: return Looper.getMainLooper().isCurrentThread(); //通过Looper.getMainLooper().getThread()比较
     }
 
     ② 另外，在Java中没有Looper对象，所以这种方法没用，可以通过Thread.getName()，来判断是否是主线程
     public boolean isMainThread() {
         return Thread.currentThread().getName().equals("main");
     }
+
+18、Looper.loop() 会退出吗？
+   不会自动退出，但是我们可以通过 Looper.quit() 或者 Looper.quitSafely() 让它退出。
+   两个方法都是调用了 MessageQueue.quit(boolean) 方法，当 MessageQueue.next() 方法发现已经调用过 MessageQueue.quit(boolean) 时会 return null 结束当前调用，否则即使 MessageQueue 已经是空的了也会阻塞等待。
