@@ -18,6 +18,17 @@
         </activity>
 
         <activity android:name=".activity.TestANRActivity"/>
+
+<!--        //在近期任务列表显示单个APP的多个Activity：参考文章链接：https://www.jianshu.com/p/7f6f98da691e-->
+<!--        //方法二：要跳转的activity中配置;-->
+<!--        //【方法步骤详见<DOC\Android\Android 实战技巧.md#十七>】-->
+<!--        <activity android:name=".activity.TestANRActivity"-->
+        <!--        如果之前已经打开过，则会打开之前的(类似于 Activity 的 singleTask)-->
+        <!--            android:documentLaunchMode="intoExisting"-->
+<!--        设置为 true 时，只要你离开了这个页面，它就会从最近任务列表里移除掉。-->
+<!--            android:excludeFromRecents="true"-->
+<!--        设置为整型值，设置应用能够包括在概览屏幕中的最大任务数。默认值为 16。达到最大任务数后，最近最少使用的任务将从概览屏幕中移除。 android:maxRecents 的最大值为 50（内存不足的设备上为 25）；小于 1 的值无效。-->
+<!--            android:maxRecents="3"/>-->
     </application>
 
 </manifest>

@@ -1,10 +1,19 @@
 # Hashmap
 HashMap基于AbstractMap类，实现了Map、Cloneable（能被克隆）、Serializable（支持序列化）接口； 非线程安全；
 允许存在一个为null的key和任意个为null的value；采用链表散列的数据结构，即数组和链表的结合；初始容量为16，填充因子默认为0.75，扩容时是当前容量翻倍，即2capacity
+
+HashMap由数组+链表组成的，数组是HashMap的主体，链表则是主要为了解决哈希冲突而存在的，如果定位到的数组位置不含链表（当前entry的next指向null）,那么对于查找，添加等操作很快，
+仅需一次寻址即可；如果定位到的数组包含链表，对于添加操作，其时间复杂度为O(n)，首先遍历链表，存在即覆盖，否则新增；对于查找操作来讲，仍需遍历链表，
+然后通过key对象的equals方法逐一比对查找。所以，性能考虑，HashMap中的链表出现越少，性能才会越好。
+HashMap 的实例有两个参数影响其性能：初始容量和加载因子。容量是哈希表中桶的数量，初始容量只是哈希表在创建时的容量。加载因子 是哈希表在其容量自动增加之前可以达到多满的一种尺度。
+当哈希表中的条目数超出了加载因子与当前容量的乘积时，则要对该哈希表进行 rehash 操作（即重建内部数据结构），从而哈希表将具有大约两倍的桶数。在Java编程语言中，加载因子默认值为0.75，默认哈希表元为101
+hashMap的默认加载因子为0.75，加载因子表示Hsah表中元素的填满的程度。加载因子越大,填满的元素越多,空间利用率越高，但冲突的机会加大了。反之,加载因子越小,填满的元素越少,
+冲突的机会减小,但空间浪费多了。冲突的机会越大,则查找的成本越高。反之,查找的成本越小。当桶中元素到达8个的时候，概率已经变得非常小，也就是说用0.75作为加载因子，每个碰撞位置的链表长度超过８个是几乎不可能的。
+
 Hashtable基于Map接口和Dictionary类；线程安全，开销比HashMap大，如果多线程访问一个Map对象，使用Hashtable更好；不允许使用null作为key和value；
 底层基于哈希表结构；初始容量为11，填充因子默认为0.75，扩容时是容量翻倍+1，即2capacity+1
 
-一、HashMap、 HashTable、HashSet的异同
+一、HashMap、HashTable、HashSet的异同
   转载文章：HashSet HashTable HashMap的区别 及其Java集合介绍 - ywl925 - 博客园
   ①HashSet是Set的一个实现类，HashMap是Map的一个实现类，同时HashMap是HashTable的替代品
   ②HashSet以对象作为元素，而HashMap以(key-value)的一组对象作为元素，且HashSet拒绝接受重复的对象。HashMap可以看作三个视图：key的Set，value的Collection，Entry的Set。 这里HashSet就是其实就是HashMap的一个视图。
@@ -33,6 +42,8 @@ Hashtable基于Map接口和Dictionary类；线程安全，开销比HashMap大，
   ①使用 java.util.Hashtable 类，此类是线程安全的。
   ②使用 java.util.concurrent.ConcurrentHashMap，此类是线程安全的。
   ③使用 java.util.Collections.synchronizedMap() 方法包装 HashMap object，得到线程安全的Map，并在此Map上进行操作。
+  【CurrentHashMap 注意 key和value的null值：如果集合中包含有null的key或value，在遍历时会出现NullPointerException，
+  导致遍历终止，影响最终数据结果，因此，应该有value值需谨慎使用CurrentHashMap】
 
 四、HashMap是有序的吗？如何实现有序？
   HashMap是无序的，而LinkedHashMap是有序的HashMap，默认为插入顺序，还可以是访问顺序，基本原理是其内部通过Entry维护了一个双向链表，负责维护Map的迭代顺序

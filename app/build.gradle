@@ -44,6 +44,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.1'
 
     //不同产品依赖不同的库
     gradle1Implementation files('libs\\gradle1\\gradle111.jar')

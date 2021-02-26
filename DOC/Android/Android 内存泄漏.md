@@ -5,7 +5,7 @@
    解决办法：内存引用上做处理，比如用软引用；图片加载时处理（压缩等）；动态回收内存；优化内存分配，自定义堆内存大小，避免使用Enum，
    减少BitMap的内存占用，内存对象重复使用，避免对象的内存泄漏。
 
-   【内存泄漏（memory leak）】： 程序在申请内存后，无法释放已申请的内存空间，一次泄漏危害可忽略，但推积严重最终会导致OOM；
+   【内存泄漏（memory leak）】： 程序在申请内存后，无法释放已申请的内存空间，一次泄漏危害可忽略，但堆积严重最终会导致OOM；
 
 二、原因分析及解决办法
   1、Handler 或 Runnable 作为非静态内部类  Handler 和 Runnable 作为匿名内部类，都会持有 Activity 的引用，由于 Handler 和 Runnable
@@ -55,7 +55,7 @@
     }
   }
 
-  5、其他内存泄漏情况：比如BraodcastReceiver 未注销，InputStream 未关闭，再代码中多注意注销或关闭。
+  5、其他内存泄漏情况：比如BraodcastReceiver 未注销，InputStream 未关闭，在代码中多注意注销或关闭。
 
   6、通过context.getApplicationContext()使用ApplicationContext作为Context传入，才能避免内存泄漏。如果一定要使用Activity的话，要使用弱引用。
      【引申】

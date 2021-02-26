@@ -22,7 +22,8 @@
   查找栈内有没有该实例，有则复用回调onNewIntent()方法，如果没有，新建Activity，并入栈；④singleInstance单例模式，全局唯一。具备singleTask所有特性，独占一个任务栈。
 
   singleTop和singleTask的区别
-  singleTop：同个Activity实例在栈中可以有多个，即可能重复创建；该模式的Activity会默认进入启动它所属的任务栈，即不会引起任务栈的变更；为防止快速点击时多次startActivity，可以将目标Activity设置为singleTop
+  singleTop：同个Activity实例在栈中可以有多个，即可能重复创建；该模式的Activity会默认进入启动它所属的任务栈，即不会引起任务栈的变更；
+             为防止快速点击时多次startActivity，可以将目标Activity设置为singleTop
   singleTask：同个Activity实例在栈中只有一个，即不存在重复创建；可通过android：taskAffinity设定该Activity需要的任务栈，即可能会引起任务栈的变更；常用于主页和登陆页.
 
 三、Context数量 = Activity数量 + Service数量 + 1（Application）
@@ -51,8 +52,45 @@
      注意：点击按钮清理后台数据的时候每一个activity都会执行ondestroy，但是通过滑动卡片删除应用杀死进程的时候，或者通过应用管理杀死进程的时候，只有栈里面的第一个没有销毁的activity执行ondestroy方法，一般都是mainActivity，其它activity均不执行ondestroy。
    10.什么情况onDestory会被调用？
      1.一般你点击系统的返回键就会杀死当前的Activity，这个时候onDestory就被调用了。
-     2.要么就你主要的去调用finish()方法，activity也会ondestroy。
-     3.在极端的情况下，系统内存不足的情况也会根据优先级来杀死一些Activity,这个时候他们的ondestory()方法也会被调用。
+     2.要么就你主动地去调用finish()方法，activity也会onDestroy。
+     3.在极端的情况下，系统内存不足的情况也会根据优先级来杀死一些Activity,这个时候他们的onDestory()方法也会被调用。
      4.利用intent跳转时加入一些启动标识，如CLEAN_TASK之类的也会导致一些acitivity被销毁，ondestory()触发
      【值得说明的是点击系统的home键回到桌面的时候，onDestory()是没有触发的。】
      【finish();后调用System.exit(0)，onDestory()不会被调用】
+   11.启动Activity：onCreate()->onStart()->onResume()
+      点击返回键：onPause()->onStop()->onDestroy()
+      点击Home键：onPause()->onSaveInstanceState()->onStop()，注意在API28之后onSaveInstanceState()方法的执行放在了onStop()之后。
+      用户再次回到原Activity：onRestart()->onStart()->onResume()
+      A Activity启动B Activity：A#onPause()->B#onCreate()->B#onStart()->B#onResume()->A#onStop()
+
+五、Activity中AndroidManifest.xml的配置
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN" />  <!--程序入口-->
+        <category android:name="android.intent.category.LAUNCHER" />  <!--在桌面上形成一个启动图标-->
+        <category android:name="android.intent.category.DEFAULT" />  <!--隐式启动，如果设置了category.LAUNCHER可忽略该设置-->
+        <category android:name="android.intent.category.HOME" />  <!--程序入口-->
+    </intent-filter>
+
+六、Activity启动流程【https://blog.csdn.net/qian520ao/article/details/78156214】
+   1.Launcher通知AMS启动淘宝APP的MainActivity，也就是清单文件设置启动的Activity。
+   2.AMS记录要启动的Activity信息，并且通知Launcher进入pause状态。
+   3.Launcher进入pause状态后，通知AMS已经paused了，可以启动淘宝了。
+   4.淘宝app未开启过，所以AMS启动新的进程，并且在新进程中创建ActivityThread对象，执行其中的main函数方法。
+   5.淘宝app主线程启动完毕后通知AMS，并传入applicationThread以便通讯。
+   6.AMS通知淘宝绑定Application并启动MainActivity。
+   7.淘宝启动MainActivitiy，并且创建和关联Context,最后调用onCreate方法
+
+   attach方法【https://www.jianshu.com/p/af6824588d9b】
+   Activity.attach创建了 PhoneWindow ，并给 PhoneWindow 绑定了管理器 WindowManage ，这里 window，WindowManage 就初始化好了
+   接下来Activity.onCreate 方法了，onCreate 里面 setContentView，进行 window UI 部分的初始化了
+
+七、Activity.finish()、Activity.onDestory()、System.exit(0)的区别
+   1.Activity.finish()：关闭Activcity，将当前Activity移出栈，并不会立即执行onDestory()，其占用的资源也没有被及时释放；
+   2.Activity.onDestory()：销毁Activcity，任何活动被清理，资源被释放，空间被回收；
+   3.System.exit(0)：将整个Application给干掉，退出进程。
+   
+八、AndroidMainfest详解
+   https://www.cnblogs.com/cj5785/p/9893156.html
+
+
+

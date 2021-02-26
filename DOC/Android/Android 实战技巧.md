@@ -48,7 +48,6 @@
      OnReceiver过多操作，IO操作，如数据库、文件、网络。
 
 
-
 五、屏幕适配
    布局文件中view设置高宽时不限定大小，尽量使用wrap_content，match_parent；代码中设置高宽前可获取屏幕大小，
    如果是线性布局可设置view在LinearLayout的weight；单位dp适配屏幕，单位sp适用字体，多图片，多布局。
@@ -77,35 +76,123 @@
   当非人为终止Activity时，比如系统配置发生改变时导致Activity被杀死并重新创建、资源内存不足导致低优先级的Activity被杀死，会调用 onSavaInstanceState() 来保存状态。该方法调用在onStop之前，但和onPause没有时序关系。
   onSaveInstanceState()适用于对临时性状态的保存，而onPause()适用于对数据的持久化保存。
 
+  使用场景：①进程被异常杀死；②系统配置发生变化（比如横竖屏切花换）。
+  当Activity处于onPause() ，onStop() ，onDestroy() 三种状态时程序可能会被Android系统回收掉，这时可能会造成用户在程序当中的数据或者修改丢失。
+  于是我们需要”现场保护”，当下次重启程序或activity时恢复上一次的数据。
+  因此Android提供了onSaveInstanceState(Bundlout State)方法会在程序被回收前进行调用，但需要注意的是onSaveInstanceState()方法只适合保存瞬态数据,
+  比如UI控件的状态, 成员变量的值等，而不应该用来保存持久化数据。onRestoreInstanceState方法，需要注意的是onSaveInstanceState方法和onRestoreInstanceState方法
+  “不一定”是成对的被调用的，onRestoreInstanceState被调用的前提是，activity A“确实”被系统销毁了，而如果仅仅是停留在有这种可能性的情况下，则该方法不会被调用，
+  例如，当正在显示activity A的时候，用户按下HOME键回到主界面，然后用户紧接着又返回到activity A，这种情况下activity A一般不会因为内存的原因被系统销毁，
+  故activity A的onRestoreInstanceState方法不会被执行。
+
 十一、Activity和Fragment的异同？
    Activity和Fragment的相似点在于，它们都可包含布局、可有自己的生命周期，Fragment可看似迷你活动。
-   不同点是，由于Fragment是依附在Activity上的，多了些和宿主Activity相关的生命周期方法，如onAttach()、onActivityCreated()、onDetach()；另外，Fragment的生命周期方法是由宿主Activity而不是操作系统调用的，Activity中生命周期方法都是protected，而Fragment都是public，也能印证了这一点，因为Activity需要调用Fragment那些方法并管理它。
+   不同点是，由于Fragment是依附在Activity上的，多了些和宿主Activity相关的生命周期方法，
+   如onAttach()、onActivityCreated()、onDetach()；另外，Fragment的生命周期方法是由宿主Activity而不是操作系统调用的，
+   Activity中生命周期方法都是protected，而Fragment都是public，也能印证了这一点，因为Activity需要调用Fragment那些方法并管理它。
+      【Fragment生命周期】
+      onAttach()： 完成Fragment和Activity的绑定，参数中的Activity即为要绑定的Activity，可以进行赋值等操作。
+      onCreate() : 完成Fragment的初始化
+      onCreateView() : 加载Fragment布局，绑定布局文件
+      onActivityCreated() : 表名与Fragment绑定的Activity已经执行完成了onCreate，可以与Activity进行交互操作。
+      onStart() : Fragment变为可见状态
+      onResume() : Fragment变为可交互状态
+      onPause()： Fragment变为不可交互状态(不代表不可见)
+      onSaveInstanceState()：保存当前Fragment的状态。记录一些数据，比如EditText键入的文本，即使Fragment被回收又重新创建，一样能恢复EditText之前键入的文本。
+      onStop(): Fragment变为不可见状态
+      onDestroyView() : 销毁Fragment的有关视图，但并未和Activity解绑，可以通过onCreateView()重新创建视图。Fragment销毁时或者ViewPager+Fragment情况下会调用
+      onDestroy() : 销毁Fragment时调用
+      onDetach() : 解除和Activity的绑定。Fragment销毁最后一步。
 
-十二、View的事件分发机制？
-   事件分发本质：就是对MotionEvent事件分发的过程。即当一个MotionEvent产生了以后，系统需要将这个点击事件传递到一个具体的View上。
-   点击事件的传递顺序：Activity（Window） -> ViewGroup -> View
-   三个主要方法：
-   dispatchTouchEvent：进行事件的分发（传递）。返回值是 boolean 类型，受当前onTouchEvent和下级view的dispatchTouchEvent影响
-   onInterceptTouchEvent：对事件进行拦截。该方法只在ViewGroup中有，View（不包含 ViewGroup）是没有的。一旦拦截，则执行ViewGroup的onTouchEvent，在ViewGroup中处理事件，而不接着分发给View。且只调用一次，所以后面的事件都会交给ViewGroup处理。
-   onTouchEvent：进行事件处理。
-
-   onTouch()、onTouchEvent()和onClick()关系？
-   优先度onTouch()>onTouchEvent()>onClick()。因此onTouchListener的onTouch()方法会先触发；如果onTouch()返回false才会接着触发onTouchEvent()，同样的，内置诸如onClick()事件的实现等等都基于onTouchEvent()；如果onTouch()返回true，这些事件将不会被触发。
-
-十三、View和SurfaceView的区别
+十二、View和SurfaceView的区别
    SurfaceView是从View基类中派生出来的显示类，他和View的区别有：
    View需要在UI线程对画面进行刷新，而SurfaceView可在子线程进行页面的刷新
    View适用于主动更新的情况，而SurfaceView适用于被动更新，如频繁刷新，这是因为如果使用View频繁刷新会阻塞主线程，导致界面卡顿
    SurfaceView在底层已实现双缓冲机制，而View没有，因此SurfaceView更适用于需要频繁刷新、刷新时数据处理量很大的页面
 
-十四、invalidate()与postInvalidate()的区别
+十三、invalidate()与postInvalidate()的区别
    invalidate()与postInvalidate()都用于刷新View，主要区别是invalidate()在主线程中调用，若在子线程中使用需要配合handler；而postInvalidate()可在子线程中直接调用。
 
-十五、不同密度的图片资源，像素从高到低依次排序为xxxhdpi>xxhdpi>xhdpi>hdpi>mdpi>ldpi
+十四、不同密度的图片资源，像素从高到低依次排序为xxxhdpi > xxhdpi > xhdpi > hdpi > mdpi > ldpi
 
-十六、资源文件
+十五、资源文件
    res/raw中的文件会被映射到R.java文件中，访问时可直接使用资源ID，不可以有目录结构
    assets文件夹下的文件不会被映射到R.java中，访问时需要AssetManager类，可以创建子文件夹。
+
+十六、在近期任务列表显示单个APP的多个Activity(仿微信打开小程序，打开新任务activity，在近期任务中呈现多个界面)
+   实现方式一：代码实现
+      ①在页面跳转时设置flag:
+        Intent intent = new Intent(this, Main2Activity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT); //此标志用于将文档打开到一个基于此意图的新任务中
+        intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK); //此标志用于创建新任务并将活动导入其中
+        startActivity(intent);
+      ②在关闭时调用方法：finishAndRemoveTask();
+      [注意]使用这种方式，必须具有在清单文件中设置的 android:launchMode="standard" 属性值（默认就是这个属性）
+
+   实现方式二：配置 AndroidManifest.xml
+      在要跳转的 Activity 配置
+         <activity
+             android:name=".Main3Activity"
+             android:documentLaunchMode="intoExisting"
+             android:excludeFromRecents="true"
+             android:maxRecents="3"/>
+
+         AndroidManifest.xml 中的属性：
+         1. documentLaunchMode(启动模式)：
+         intoExisting：如果之前已经打开过，则会打开之前的(类似于 Activity 的 singleTask)；
+         always：不管之前有没有打开，都新创建一个(类似于 Activity 的 standard)；
+         none：不会在任务列表创建新的窗口，依旧显示单个任务；
+         never：不会在任务列表创建新的窗口，依旧显示单个任务，设置此值会替代 FLAG_ACTIVITY_NEW_DOCUMENT 和 FLAG_ACTIVITY_MULTIPLE_TASK 标志的行为（如果在 Intent 中设置了其中一个标志）。
+         注：对于除 none 和 never 以外的值，必须使用 launchMode="standard" 定义 Activity。如果未指定此属性，则使用 documentLaunchMode="none"。
+         2. excludeFromRecents：
+         默认为 false 。
+         设置为 true 时，只要你离开了这个页面，它就会从最近任务列表里移除掉。
+         3. maxRecents：
+         设置为整型值，设置应用能够包括在概览屏幕中的最大任务数。默认值为 16。达到最大任务数后，最近最少使用的任务将从概览屏幕中移除。
+         android:maxRecents 的最大值为 50（内存不足的设备上为 25）；小于 1 的值无效。
+
+十七、使用Android Jetpack组件的优势：
+   （1）Lifecycles轻松管理应用程序的生命周期。
+   （2）LiveData构建可观察的数据对象，以便在基础数据更改时通知视图。
+   （3）ViewModel存储在应用程序轮换中未销毁的UI相关数据，在界面重建后恢复数据。
+   （4）Room轻松的实现SQLite数据库。
+   （5）WorkManager系统自动调度后台任务的执行，优化使用性能。
+   （6）Navigation导航组件轻松管理Fragment等页面跳转问题。
+
+   google推荐的基于Jetpack的Android客户端软件开发架构图：
+   （1）通过定义Repository管理数据来源(Model)。
+   （2）使用LiveData驱动界面(View)更新。
+   （3）使用ViewModel代替Presenter管理数据(VM)。
+   （4）Room（Sqlite）储存本地序列化的数据，Retrofit获取远程数据的数据。
+
+十八、MVP、MVVM模式总结
+   在MVP里，其中M层处理数据，业务逻辑等；V层处理界面的显示结果；C层起到桥梁的作用，来控制V层和M层通信以此来达到分离视图显示和业务逻辑层。
+   Presenter完全把Model和View进行了分离，主要的程序逻辑在Presenter里实现。而且，Presenter与具体的 View是没有直接关联的，
+   而是通过定义好的接口进行交互，从而使得在变更View时候可以保持Presenter的不变，即重用！不仅如此，我们还可以编写测试用的View，
+   模拟用户的各种操作，从而实现对Presenter的测试 —— 而不需要使用自动化的测试工具。 我们甚至可以在Model和View都没有完成时候，
+   就可以通过编写Mock Object（即实现了Model和View的接口，但没有具体的内容的）来测试Presenter的逻辑。
+   MVP框架由3部分组成：View负责显示，Presenter负责逻辑处理，Model提供数据。在MVP模式里通常包含3个要素（加上View interface是4个）
+   MVP的优势
+    1、模型与视图完全分离，我们可以修改视图而不影响模型
+    2、可以更高效地使用模型，因为所有的交互都发生在一个地方——Presenter内部
+    3、我们可以将一个Presener用于多个视图，而不需要改变Presenter的逻辑。这个特性非常的有用，因为视图的变化总是比模型的变化频繁。
+    4、如果我们把逻辑放在Presenter中，那么我们就可以脱离用户界面来测试这些逻辑（单元测试）
+
+    MVVM模式的设计思想
+    MVVM模式中，一个ViewModel和一个View匹配，它没有MVP中的IView接口，而是完全的和View绑定，所有View中的修改变化，
+    都会自动更新到ViewModel中，同时ViewModel的任何变化也会自动同步到View上显示。这种自动同步之所以能够的原因是ViewModel
+    中的属性都实现了observable这样的接口，也就是说当使用属性的set的方法，都会同时触发属性修改的事件，使绑定的UI自动刷新。
+    (在WPF中，这个observable接口是 INotifyPropertyChanged; 在knockoutjs中，是通过函数ko.observable() 和ko.observrableCollection()来实现的)。
+    所以MVVM比MVP更升级一步，在MVP中，V是接口IView, 解决对于界面UI的耦合; 而MVVM干脆直接使用ViewModel和UI无缝结合,
+    ViewModel直接就能代表UI. 但是MVVM做到这点是要依赖具体的平台和技术实现的，比如WPF和knockoutjs, 这也就是为什么ViewModel不需要实现接口的原因，
+    因为对于具体平台和技术的依赖，本质上使用MVVM模式就是不能替换UI的使用平台的.
+
+    https://www.jianshu.com/p/ff6de219f988
+    mvvm模式将Presener改名为View Model，基本上与MVP模式完全一致，唯一的区别是，它采用双向绑定(data-binding): View的变动，
+    自动反映在View Model，反之亦然。使得视图和控制层之间的耦合程度进一步降低，关注点分离更为彻底，同时减轻了Activity的压力。
+    这样开发者就不用处理接收事件和View更新的工作，框架已经帮你做好了。
+
+
 
 
 

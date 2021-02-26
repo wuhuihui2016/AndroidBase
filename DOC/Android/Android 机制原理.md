@@ -22,6 +22,50 @@
     动态广播最好在Activity 的 onResume()注册、onPause()注销，动态广播，有注册就必然得有注销，否则会导致内存泄露，
     重复注册、重复注销也不允许
 
+    广播的类型主要分为5类：
+    普通广播（Normal Broadcast）：开发者自身定义 intent的广播（最常用），sendBroadcast(intent);
+    系统广播（System Broadcast）：涉及到手机的基本操作（如开机、网络状态变化、拍照等等），都会发出相应的广播，每个广播都有特定的Intent - Filter（包括具体的action）
+    有序广播（Ordered Broadcast）：发送出去的广播被广播接收者按照先后顺序接收，按照Priority属性值从大-小排序；Priority属性相同者，动态注册的广播优先；sendOrderedBroadcast(intent);
+
+      BroadcastReceiver与LocalBroadcastReceiver有什么区别？【https://www.guozzz.com/187/】
+           【BroadcastReceiver】是针对应用间、应用与系统间、应用内部进行通信的一种方式 。是跨应用广播，利用Binder机制实现，
+                支持动态和静态两种方式注册方式。(现在也不推荐使用静态注册了，8.0之后限制了绝大部分广播只能使用动态注册 )
+           【LocalBroadcastReceiver】仅在自己的应用内发送接收广播，也就是只有自己的应用能收到，数据更加安全广播只在这个程序里，
+                而且效率更高。 是应用内广播，利用Handler实现，利用了IntentFilter的match功能，提供消息的发布与接收功能，实现应用内通信，仅支持动态注册。
+           BroadcastReceiver 静态注册：
+           (1)在清单文件中，通过标签声明；
+           (2)在Android3.1开始，对于接收系统广播的BroadcastReceiver，App进程退出后，无法接收到广播；对于自定义的广播，可以通过重写flag的值，使得即使App进程退出，仍然可以接收到广播。
+           (3)静态注册的广播是由PackageManagerService负责。
+
+           BroadcastReceiver 动态注册：
+           (1)在代码中注册，程序运行的时候才能进行；2.跟随组件的生命周期；3.动态注册的广播是由AMS(ActivityManagerService)负责的。
+           注意：对于动态注册，最好在Activity的onResume()中注册，在onPause()中注销。在系统内存不足时，onStop()、onDestory() 可能不会执行App就被销毁，onPause()在App销毁前一定会被执行，保证广播在App销毁前注销。
+
+           LocalBroadcastReceiver 使用
+           1.调用LocalBroadcastManager.getInstance(this)来获得实例，在发送和注册的时候采用，LocalBroadcastManager的sendBroadcast方法和registerReceiver方法。
+           2.使用了单例模式，并且将外部传入的Context转换成了Application的Context，避免造成内存泄露。
+           3.在构造方法中创建了Handler，实质是通过Handler进行发送和接受消息的。
+           4.创建Handler时，传入了主线程的Looper，说明这个Handler是在主线程创建的，即广播接收者是在主线程接收消息的，所以不能在onReceiver（）中做耗时操作。
+           注意：对于LocalBroadcastManager发送的广播，只能通过LocalBroadcastManager动态注册，不能静态注册。
+
+           广播细分为三种: 普通广播(调用sendBroadcast()发送)、有序广播、本地广播
+
+           有序广播：
+           广播接收者会按照priority优先级从大到小进行排序
+           优先级相同的广播，动态注册的广播优先处理
+           广播接收者还能对广播进行截断和修改
+
+           本地广播的优点?
+           LocalBroadcast是APP内部维护的一套广播机制，有很高的安全性和高效性。所以如果有APP内部发送、接收广播的需要应该使用LocalBroadcast。
+           发送的广播不会离开我们的应用，不会泄露关键数据。
+           其他程序无法将广播发送到我们程序内部，不会有安全漏洞。
+           本地广播的注意事项：
+            本地广播无法通过静态注册来接收，相比起系统全局广播更加高效
+            在广播中启动activity的话，需要为intent加入FLAG_ACTIVITY_NEW_TASK的标记，不然会报错，因为需要一个栈来存放新打开的activity。
+            广播中弹出AlertDialog的话，需要设置对话框的类型为:TYPE_SYSTEM_ALERT不然是无法弹出的。
+            LocalBroadcastManager所发送的广播action，只能与注册到LocalBroadcastManager中BroadcastReceiver产生互动。
+
+
 六、Bitmap
     ①Config：表示图片像素类型
     ②三种压缩格式：Bitmap.CompressFormat.JPEG、Bitmap.CompressFormat.PNG、Bitmap.CompressFormat.WEBP
@@ -30,11 +74,6 @@
     ④内存优化：缓存LRU、缩放、Config、Compress选择、内存管理、缓存方式等等方面入手。、内存管理、内存优化、缩放、config、compress
     图片优化：异步加载，压缩处理bitmapFactory.options，设置内存大小，缓存于内存、SD卡，没有内存再从网络取。
     如何处理大图：BitmapFactory.Options，把inJustDecodeBounds这个属性设为true，计算inSampleSize。
-
-    【引申】开源框架：ImageLoader、Glide（google）、Fresco（FaceBook）、Picasso（Square）
-    Picasso包体积小、清晰，但功能有局限不能加载gif、只能缓存全尺寸；
-    Glide功能全面，擅长大型图片流，体积较大；
-    Fresco内存优化，减少oom，体积更大。
 
 七、APP 启动流程
    点击桌面图标，launcher进程启动主Activity以Binder方式发送给AMS服务，交付给ActivityManagerService
@@ -80,7 +119,6 @@
          文件共享问题，可能造成资源的竞争访问，导致诸如数据库损坏、数据丢失等
          调试麻烦
 
-
       Messenger使用方法：【https://www.cnblogs.com/ldq2016/p/8417692.html】
       服务实现一个Handler，由其接收来自客户端的每个调用的回调。
       Handler用于创建Messenger对象（对Handler的引用）。
@@ -88,14 +126,13 @@
       客户端使用IBinder将Messenger（引用服务的Handler）实例化，然后使用后者将Message对象发送给服务。
       服务在其Handler中（具体地讲，是在handleMessage()方法中）接收每个Message。
 
-
 十二、CPU
    是一个有多功能的优秀领导者，它的优点在于调度、管理、协调能力强，计算能力则位于其次，而GPU相当于一个能接受CPU调度的
    “拥有强大计算能力”的员工，GPU提供了多核并行计算的基础结构，且核心数非常多，可支撑大量数据的并行操作，拥有更高的访存速度，更高的浮点运算能力。
 
 十三、Application的生命周期
     参考文章：Android中Application的用途及生命周期_YY小爬虫_新浪博客
-    ①onCreate0 在创建应用程序时创建；
+    ①onCreate() 在创建应用程序时创建；
     ②onTerminate()  在模拟环境下执行。当终止应用程序对象时调用，不保证一定被调用，当程序是被内核终止以便为其他应用程序释放资源，那么将不会提醒，
      并且不调用应用程序的对象的onTerminate方法而直接终止进程；
     ③onLowMemory() 低内存时执行。好的应用程序一般会在这个方法里面释放一些不必要的资源来应付当后台程序已经终止，前台应用程序内存还不够时的情况；
@@ -111,16 +148,16 @@
     FLV：文件小，加载速度快，用于网络观看视频。
     MP4：音视频压缩编码标准。
 
-十五、Serializable 序列化接口，开销大，建议使用，java方法；
-     Parcelelable 使用麻烦，效率高，多用于内存，Android方法。
+十五、Serializable 序列化接口，开销大，建议使用，java方法，在序列化的时候会产生大量的临时对象，从而引起频繁的GC；
+     Parcelelable 使用麻烦，效率高，多用于内存，Android方法，性能比Serializeble高，Parcelable不能使用在要将数据存储在硬盘上的情况。
 
 十六、Service启动方式和生命周期
    ①startService()：开启，调用者退出后Service仍在；
          生命周期：onCreate()--onStartCommand()--onDestory()
-   通过startService启动后，service会一直无限期运行下去，只有外部调用了stopService()或stopSelf()方法时，该Service才会停止运行并销毁。
-        ②bindService()：开启，调用者退出后Service随即退出。
+         通过startService启动后，service会一直无限期运行下去，只有外部调用了stopService()或stopSelf()方法时，该Service才会停止运行并销毁。
+   ②bindService()：开启，调用者退出后Service随即退出。
         生命周期：onCreate()--onBind()--onUnBind()--onDestory()
-        ①+② 的生命周期：onCreate()--onStartCommand()--onBind()--onUnBind()--onDestory()
+   ①+② 的生命周期：onCreate()--onStartCommand()--onBind()--onUnBind()--onDestory()
 
 十七、JNI和NDK
    JNI是Java调用Native 语言的一种特性，属于Java，Java本地接口，使Java与本地其他类型语言交互（C++）
@@ -168,7 +205,8 @@
 二十二、LRU算法原理
     为减少流量消耗，可采用缓存策略。常用的缓存算法是LRU(Least Recently Used)：
     核心思想：当缓存满时, 会优先淘汰那些近期最少使用的缓存对象。主要是两种方式：
-    LruCache(内存缓存)：LruCache类是一个线程安全的泛型类：内部采用一个LinkedHashMap以强引用的方式存储外界的缓存对象，并提供get和put方法来完成缓存的获取和添加操作，当缓存满时会移除较早使用的缓存对象，再添加新的缓存对象。
+    LruCache(内存缓存)：LruCache类是一个线程安全的泛型类：内部采用一个LinkedHashMap以强引用的方式存储外界的缓存对象，
+       并提供get和put方法来完成缓存的获取和添加操作，当缓存满时会移除较早使用的缓存对象，再添加新的缓存对象。
     DiskLruCache(磁盘缓存)： 通过将缓存对象写入文件系统从而实现缓存效果。
 
 二十三、装箱、拆箱什么含义？
@@ -194,6 +232,9 @@
 二十六、ArrayList和LinkedList的区别
     ArrayList的底层结构是数组，可用索引实现快速查找；是动态数组，相比于数组容量可实现动态增长
     LinkedList底层结构是链表，增删速度快；是一个双向循环链表，也可以被当作堆栈、队列或双端队列
+    【扩展】用List list = new ArrayList(Arrays.asList(array)); 替换 List list = Arrays.asList(array);
+    替换原因：asList(array) 抛出异常：Exception in thread "main" java.lang.UnsupportedOperationException，
+        由于asList产生的集合并没有重写add,remove等方法，所以它会调用父类AbstractList的方法，而父类的方法中抛出的却是异常信息
 
 二十七、AIDL(Android Interface definition language)
     Android中IPC（Inter-Process Communication）方式中的一种。AIDL的作用跨进程通信，是让你可以在自己的APP里绑定一个其他APP的service，使得你的APP可以和其他APP交互。
@@ -207,11 +248,8 @@
      （1）AIDL接口只支持方法，不能声明静态成员；
      （2）不会有返回给调用方的异常。
 
-二十八、LruCache原理
-    LruCache是个泛型类，内部采用LinkedHashMap来实现缓存机制，它提供get方法和put方法来获取缓存和添加缓存，
-    其最重要的方法trimToSize是用来移除最少使用的缓存和使用最久的缓存，并添加最新的缓存到队列中。
 
-二十九、冷启动和热启动
+二十八、冷启动和热启动
     1、什么是冷启动和热启动
     冷启动：在启动应用前，系统中没有该应用的任何进程信息
     热启动：在启动应用时，在已有的进程上启动应用（用户使用返回键退出应用，然后马上又重新启动应用）
@@ -239,11 +277,8 @@
     不要在mainThread中加载资源
     通过懒加载方式初始化第三方SDK
 
-三十、Serializeble和Parcelable
-    Serializeble：是java的序列化方式，Serializeble在序列化的时候会产生大量的临时对象，从而引起频繁的GC
-    Parcelable：是Android的序列化方式，且性能比Serializeble高，Parcelable不能使用在要将数据存储在硬盘上的情况
 
-三十一、进程保活
+二十九、进程保活
     1、进程的优先级
     空进程、后台进程、服务进程、可见进程、前台进程
 
@@ -258,13 +293,13 @@
     利用JobScheduler机制拉活
     利用账号同步机制拉活
 
-三十二、Kotlin
+三十、Kotlin
     Kotlin是一种基于JVM的编程语言，对Java的一种拓展，比Java更简洁，Kotlin支持函数式编程,Kotlin类和Java类可以相互调用
 
     2、Kotlin环境搭建
     直接在Plugin中下载Kotlin插件即可，系统会自动配置到Kotlin环境
 
-三十三、SurfaceView双缓冲机制
+三十一、SurfaceView双缓冲机制
     缓冲：在我们的界面中图形都是在画布上绘制出来的，所以这个绘制的过程就叫缓冲,而画布也就可以称作缓冲区。
 
     缓冲的种类：
@@ -280,4 +315,215 @@
     surfaceView为什么比view好用？
     View是在UI主线程中进行绘制的，绘制时会阻塞主线程，如果onTouch处理的事件比较多的话会导致界面卡顿。而surfaceView是另开了一个线程绘制的，再加上双缓冲机制，所以要比view高效并且界面不会卡顿。
 
+三十二、单例模式实现方式
+    1、饿汉式(线程安全，调用效率高，但是不能延时加载)
+        public class ImageLoader{
+             private static ImageLoader instance = new ImageLoader;
+             private ImageLoader(){}
+             public static ImageLoader getInstance(){
+                  return instance;
+              }
+        }
+        程序跑起来就被创建对象，如果程序始终没有使用这个单例对象，就会造成不必要的资源浪费，因此不推荐这种实现方式。
+    2、懒汉式(线程安全，调用效率不高，但是能延时加载)
+        public class SingletonDemo2 {
+
+            //类初始化时，不初始化这个对象(延时加载，真正用的时候再创建)
+            private static SingletonDemo2 instance;
+
+            //构造器私有化
+            private SingletonDemo2(){}
+
+            //方法同步，调用效率低
+            public static synchronized SingletonDemo2 getInstance(){
+                if(instance==null){
+                    instance=new SingletonDemo2();
+                }
+                return instance;
+            }
+        }
+    3、Double CheckLock实现单例：DCL也就是双重锁判断机制（由于JVM底层模型原因，偶尔会出问题，不建议使用）
+        public class SingletonDemo5 {
+                private volatile static SingletonDemo5 SingletonDemo5;
+
+                private SingletonDemo5() {
+                }
+
+                public static SingletonDemo5 newInstance() {
+                    if (SingletonDemo5 == null) {
+                        synchronized (SingletonDemo5.class) {
+                            if (SingletonDemo5 == null) {
+                                SingletonDemo5 = new SingletonDemo5();
+                            }
+                        }
+                    }
+                    return SingletonDemo5;
+                }
+            }
+    4、静态内部类实现模式（线程安全，调用效率高，可以延时加载）
+        public class SingletonDemo3 {
+
+            private static class SingletonClassInstance{
+                private static final SingletonDemo3 instance=new SingletonDemo3();
+            }
+
+            private SingletonDemo3(){}
+
+            public static SingletonDemo3 getInstance(){
+                return SingletonClassInstance.instance;
+            }
+
+        }
+    5、枚举类（线程安全，调用效率高，不能延时加载，可以天然的防止反射和反序列化调用）
+        public enum SingletonDemo4 {
+
+            //枚举元素本身就是单例
+            INSTANCE;
+
+            //添加自己需要的操作
+            public void singletonOperation(){
+            }
+        }
+    【结语】单例对象 占用资源少，不需要延时加载，枚举好于饿汉；单例对象占用资源多，需要延时加载，静态内部类好于懒汉式。
+
+三十三、LRU
+    基本概念：LRU是Least Recently Used的缩写，最近最少使用算法。
+
+    Java 实现LRUCache
+      1、基于LRU的基本概念，为了达到按最近最少使用排序。能够选择HashMap的子类LinkedHashMap来作为LRUCache的存储容器。
+      2、LinkedHashMap的原理：
+      a、 对于LinkedHashMap而言，它继承与HashMap、底层使用哈希表与双向链表来保存全部元素。其基本操作与父类HashMap相似，它通过重写父类相关的方法。来实现自己的链接列表特性。
+    HashMap是单链表。LinkedHashMap是双向链表
+      b、存储：LinkedHashMap并未重写父类HashMap的put方法，而是重写了父类HashMap的put方法调用的子方法void recordAccess(HashMap m)。void addEntry(int hash, K key, V value, int bucketIndex) 和void createEntry(int hash, K key, V value, int bucketIndex)，提供了自己特有的双向链接列表的实现。
+      c、读取：LinkedHashMap重写了父类HashMap的get方法，实际在调用父类getEntry()方法取得查找的元素后，再推断当排序模式accessOrder为true时。记录訪问顺序，将最新訪问的元素加入到双向链表的表头，并从原来的位置删除。因为的链表的添加、删除操作是常量级的，故并不会带来性能的损失。
+
+    LRUCache的简单实现
+    package com.knowledgeStudy.lrucache;
+    import java.util.ArrayList;
+    import java.util.Collection;
+    import java.util.LinkedHashMap;
+    import java.util.Map;
+    /**
+     * 固定大小 的LRUCache<br>
+     * 线程安全
+     **/
+    public class LRUCache<K, V> {
+        private static final float factor = 0.75f;//扩容因子
+        private Map<K, V> map; //数据存储容器
+        private int cacheSize;//缓存大小
+        public LRUCache(int cacheSize) {
+            this.cacheSize = cacheSize;
+            int capacity = (int) Math.ceil(cacheSize / factor) + 1;
+            map = new LinkedHashMap<K, V>(capacity, factor, true) {
+                private static final long serialVersionUID = 1L;
+                /**
+                 * 重写LinkedHashMap的removeEldestEntry()固定table中链表的长度
+                 **/
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+                    boolean todel = size() > LRUCache.this.cacheSize;
+                    return todel;
+                }
+            };
+        }
+        /**
+         * 依据key获取value
+         *
+         * @param key
+         * @return value
+         **/
+        public synchronized V get(K key) {
+            return map.get(key);
+        }
+        /**
+         * put一个key-value
+         *
+         * @param key
+         *            value
+         **/
+        public synchronized void put(K key, V value) {
+            map.put(key, value);
+        }
+        /**
+         * 依据key来删除一个缓存
+         *
+         * @param key
+         **/
+        public synchronized void remove(K key) {
+            map.remove(key);
+        }
+        /**
+         * 清空缓存
+         **/
+        public synchronized void clear() {
+            map.clear();
+        }
+        /**
+         * 已经使用缓存的大小
+         **/
+        public synchronized int cacheSize() {
+            return map.size();
+        }
+        /**
+         * 获取缓存中全部的键值对
+         **/
+        public synchronized Collection<Map.Entry<K, V>> getAll() {
+            return new ArrayList<Map.Entry<K, V>>(map.entrySet());
+        }
+    }
+
+三十六、Android 系统中的启动流程【https://www.jianshu.com/p/8185b57bd070】
+
+三十七、ContentProvider【https://www.jianshu.com/p/11dffee54414】
+    ContentProvider 是一种内容共享型组件，其主要职责是向其他组件以及其他应用提供数据。
+    当 ContentProvider 所在的进程启动时，ContentProvider 会同时启动并被发布到 AMS 中。
+    注意：ContentProvider 的 onCreate 要先于 Application 的 onCreate 执行
+
+    是否是单例?
+    一般来说，ContentProvider 都应该是单例的，ContentProvider 是否单例取决于注册时的 android:multiprcess 属性，
+    如果该属性为 false ，则是单例的，这也是默认值。当 android:multiprocess 为 true 时为多例，
+    这时候在每个调用者的进程中都存在一个 ContentProvider 对象。
+
+    发布过程
+    应用进程 & 系统进程
+    当 ContentProvider 所在进程启动时，在 ActivityThread 的 main 函数中，调用 attach 方法，attach 方法中会调用 AMS 的 attachApplication 方法，
+    最终通过 IPC 在 AMS 中调用 ActivityThread 中 ApplicationThread 的 bindApplication 方法，通过消息机制调用 ActivityThread 的 handleBindApplication 方法
+    ContentProvider的初始化过程:Application#onBaseContextAttach() -> ContentProvider#onCreate() -> Application#onCreate()
+
+    handleBindApplication 方法中有如下代码
+
+        // 初始化 Application，并在初始化时调用 Application 的 attachBaseContext(Context context) 方法为 Application 附加上 Context，
+        所以在 attachBase 方法中调用 getApplication 方法得到的是空
+        Application app = data.info.makeApplication(data.restrictedBackupMode, null);
+
+        // 加载 ContentProvider，并调用其 onCreate 方法
+        if (!data.restrictedBackupMode) {
+            List<ProviderInfo> providers = data.providers;
+            // prividers 是根据新启动的应用进程的信息，由系统进程在系统启动时注册的 ContentProvider 中筛选出来的，启动 Application 时从系统进程传递过来
+            if (providers != null) {
+                installContentProviders(app, providers); // 初始化 ContentProvider，其中会调用 onCreate 方法
+                mH.sendEmptyMessageDelayed(H.ENABLE_JIT, 10*1000);
+            }
+        }
+
+        // 调用 Application 的 onCreate 方法，由此可见，ContentProvider 的 onCreate 方法早于 Application 的 onCreate 方法
+        mInstrumentation.callApplicationOnCreate(app);
+    installContentProviders 方法中遍历 providers 集合，分别调用 installProvider 方法的到 ContentProviderHolder 对象， installProvider 中使用 ClassLoader 初始化 ContentProvider 对象，然后调用 ContentProvider 的 attachInfo 方法初始化其信息，其中调用了 onCreate 方法。然后根据注册清单中注册的 ContentProvider 的信息，构造 ContentProviderHolder 对象，ContentProviderHolder 是可序列化的 ContentProvider，接着将IcontentProvider 放入已发布的 IContentProvider 的集合， 再将 ContentProviderHolder 对象放入集合中，通过 AMS 的 publishContentProviders 方法远程发布 ContentProviderHolder 集合到系统进程。这就完成了当前应用中 ContentProvider 的发布。
+
+    ContentProviderHolder 中还有 IContentProvider 的引用，IContentProvider 继承了 IInterface 接口，可在 Binder 中传输，其子类是 ContentProviderNative 也是抽象类，其实现类为 ContentProvider 中的一个内部类 Transport ，在 Transport 实现的方法中调用了 ContentProvider 中的方法，所以 Transport 为 AIDL 中的 Stub 类，将 Transport 的引用放入 ContentProviderHolder 中，在系统进程可以得到 Transport 的代理 Proxy，在系统进程中通过 IPC 就可以调用 Transport 的方法，从而调用 ContentProvider 的方法。
+
+    [工作过程]
+    1、在使用 ContentProvider 时，我们会通过 ContentResolver 来进行操作
+    2、Context 对象的 getContenResolver 方法，返回一个 ApplicationContentResolver 类对象，该类继承自 ContentResolver ，
+       在 ContentImpl 构造方法中通 ApplicationContentResolver 类的构造方法初始化 ApplicationContentResolver 对象。
+    3、以 query 方法为例，ApplicationContentResolver 的 query 方法，会调用 ContentResolver 的 query 方法，
+       query 方法中调用 acquireProvider 方法来获取 IContentProvider 对象，IContentnProvider 继承了 IInterface 接口，
+       ApplicationContentResolver 在 ContentResolver 中是抽象方法，最终会调用 ApplicationContentResolver 的 acquireProvider 方法，
+       在调用 query 方法时会将 Uri 构造成 String 并以参数的形式传递;
+    4、acquireProvider 方法中，会调用当前应用 ActivityThread 的 acquireProvider 方法来获取能处理当前 Uri 的 IContentProvider 对象，
+       acquireProvider 方法中，会根据要操作的 Uri 来查找是否当前发布的 ContentProvider 中是否有对应的，如果有则直接返回，如果没有则通过进程间通信通知
+       AMS 的 getContentProvider 方法启动需要的 ContentProvider 所在的进程，进程启动之后 ContentProvider 也会发布，得到对应的 ContentProvider 之后 AMS 会将其返回，acquireProvider 方法中也将得到的 IContentProvider 返回到 ApplicationContentResolver 的 query 方法中。
+    5、ApplicationContentResolver 的 acquireProvider 方法中得到 IContentProvider 之后，通过 AMS 来访问 ContentProvider ，
+       这里的 IContentProvider 是 AIDL 中的 Proxy，通过 IPC 调用 ContentProvider.Transport 对象的方法，Transport 的 query 方法，
+       调用我们自定义的 ContentProvider 的 query 方法，并将结果返回到 acquireProvider 方法，在返回到客户端调用的 query 方法，完成工作。
 
