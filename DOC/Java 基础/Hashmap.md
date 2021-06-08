@@ -1,4 +1,4 @@
-# Hashmap
+# Hashmap 【扩展阅读】 https://www.cnblogs.com/Young111/p/11519952.html
 HashMap基于AbstractMap类，实现了Map、Cloneable（能被克隆）、Serializable（支持序列化）接口； 非线程安全；
 允许存在一个为null的key和任意个为null的value；采用链表散列的数据结构，即数组和链表的结合；初始容量为16，填充因子默认为0.75，扩容时是当前容量翻倍，即2capacity
 

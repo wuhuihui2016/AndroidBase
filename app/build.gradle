@@ -50,4 +50,7 @@ dependencies {
     gradle1Implementation files('libs\\gradle1\\gradle111.jar')
     gradle2Implementation files('libs\\gradle2\\gradle222.jar')
 
+    //使用腾讯的 MMKV 替代 SharedPreferences
+    implementation 'com.tencent:mmkv-static:1.2.9'
+
 }

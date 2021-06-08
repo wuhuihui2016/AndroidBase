@@ -136,16 +136,27 @@
       通过onDraw()画出来，画View之前调用onMeasure()方法计算显示的大小。
 
 七、viewpager2
-    原理：支持垂直滚动, 重写之前的viewpager，使用recycleview加LinearLayoutManager实现竖直滚动, 其实可以理解为对recyclerview的二次封装；
+    新特性：
+        基于RecyclerView实现。这意味着RecyclerView的优点将会被ViewPager2所继承。
+        支持竖直滑动。只需要一个参数就可以改变滑动方向。
+        支持关闭用户输入。通过setUserInputEnabled来设置是否禁止用户滑动页面。
+        支持通过编程方式滚动。通过fakeDragBy(offsetPx)代码模拟用户滑动页面。
+        CompositePageTransformer 支持同时添加多个PageTransformer。
+        支持DiffUtil ，可以添加数据集合改变的item动画。
+        支持RTL (right-to-left)布局。我觉得这个功能对国内开发者来说可能用处不大..
+        
+    原理：支持垂直滚动, 重写之前的 viewpager，使用 recycleview + LinearLayoutManager 实现竖直滚动, 其实可以理解为对recyclerview的二次封装；
       viewpager2的适配器FragmentStateAdapter在遇到预加载时，只会创建Fragment对象，不会把Fragment真正的加入到布局中，所以自带懒加载效果；
     API变动:
       FragmentStateAdapter替换了原来的 FragmentStatePagerAdapter
       RecyclerView.Adapter替换了原来的 PagerAdapter
       registerOnPageChangeCallback替换了原来的 addPageChangeListener
+      移除了setPargeMargin方法
       FragmentStateAdapter和FragmentStatePagerAdapter作用相同, 可以用viewpager来管理fragment, 区别在于viewpager2的FragmentStateAdapter与recycleview的生命周期绑定
       另外viewpager2的Adapter是继承自recyclerview的adapter, 支持除了notifyDataSetChanged()以外的notifyItemChanged(int position)等方式, 使用上更加的便捷
-    引用方式：implementation 'androidx.viewpager2:viewpager2:1.0.0-alpha01'
+    引用方式：implementation "androidx.viewpager2:viewpager2:1.0.0"
     在xml中设置orientation, 或者在代码中设置setOrientation(),可以控制横纵向
+    ViewPager2内部封装的是RecyclerView，因此它的Adapter也就是RecyclerView的Adapter。
     常用方法：
       notifyDataSetChanged(); //刷新Viewpager 同样支持recyclerView的局部刷新
       setUserInputEnabled(false);//禁止手动滑动

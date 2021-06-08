@@ -11,6 +11,8 @@
   1、Handler 或 Runnable 作为非静态内部类  Handler 和 Runnable 作为匿名内部类，都会持有 Activity 的引用，由于 Handler 和 Runnable
     的生命周期比 Activity 长，导致Activity 无法被回收，从而造成内存泄漏。  解决办法：将Handler 和 Runnable 定义为静态内部类，在Activity 的onDestory()方法中调用Handler 的 removeCallbacks 方法来移除 Message。
     还有一种特殊情况，如果 Handler 或者 Runnable 中持有 Context 对象，那么即使使用静态内部类，还是会发生内存泄漏。
+    
+    hashmap，Vector等，如果是静态集合 没有及时set null也是内存泄露的原因
 
     解决办法：
     方法一：通过程序逻辑来进行保护。
@@ -99,7 +101,14 @@
   8.避免 GC 回收将来要重新使用的对象 (内存设计模式对象池 + LRU 算法)
   9.Activity 组件泄漏（handler、非静态内部类和匿名内部类持有activity引用）
   10.Service 耗时操作尽量使用 IntentService,而不是Service
-  11.垃圾回收不是防止内存泄露的保险方式。
+  11.垃圾回收不是防止内存泄露的保险方式
+  12.ArrayMap/SparseArray代替hashmap
+     减少bitmap的内存占用
+     inSampleSize：缩放比例，在把图片载入内存之前，我们需要先计算出 一个合适的缩放比例，避免不必要的大图载入。
+     decode format：解码格式，选择ARGB_8888/RBG_565/ARGB_4444/ALPHA_8，存在很大差异。
+     减少资源图片的大小，过大的图片可以考虑分段加载
+     避免在ondraw方法里面 new对象
+
 
 四、内存泄漏和内存溢出的区别
   内存泄漏(Memory Leak)是指程序在申请内存后，无法释放已申请的内存空间。是造成应用程序OOM的主要原因之一。

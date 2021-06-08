@@ -1,16 +1,19 @@
 package com.whh.androidbase.activity;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.whh.androidbase.MyApp;
 import com.whh.androidbase.R;
+import com.whh.androidbase.utils.FileUtils;
 import com.whh.test.TestVersion;
 import com.whh.testjar.MainMethod;
-
-import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -33,6 +36,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT); //此标志用于将文档打开到一个基于此意图的新任务中；
         intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK); //此标志用于创建新任务并将活动导入其中
         startActivity(intent);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void copy(View view) {
+
+        FileUtils.delDestFile(); //拷贝前删除已存在的目标文件
+        FileUtils.copyFile(); //普通IO流拷贝文件
+        //TODO　copyFile is finished! 40345 ms!
+
+        FileUtils.delDestFile();
+        FileUtils.copyFile2(); //FileChannel.read拷贝文件
+        //TODO　copyFile2 is finished! 39838 ms!
+
+        FileUtils.delDestFile();
+        FileUtils.copyFile3(); //FileChannel.transferFrom拷贝文件
+        //TODO　copyFile3 is finished! 10947 ms!
+
+        FileUtils.delDestFile();
+        FileUtils.copyFile4(); //FileChannel.transferTo拷贝文件
+        //TODO　copyFile4 is finished! 8951 ms!
+
     }
 
 }
