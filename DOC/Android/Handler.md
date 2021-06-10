@@ -159,4 +159,8 @@
 
 18、Looper.loop() 会退出吗？
    不会自动退出，但是我们可以通过 Looper.quit() 或者 Looper.quitSafely() 让它退出。
-   两个方法都是调用了 MessageQueue.quit(boolean) 方法，当 MessageQueue.next() 方法发现已经调用过 MessageQueue.quit(boolean) 时会 return null 结束当前调用，否则即使 MessageQueue 已经是空的了也会阻塞等待。
+   两个方法都是调用了 MessageQueue.quit(boolean) 方法，当 MessageQueue.next() 方法发现已经调用过 MessageQueue.quit(boolean) 时会 return null 结束当前调用，
+   否则即使 MessageQueue 已经是空的了也会阻塞等待。
+
+19、ActivityThread
+     为Android的主线程，其中的main方法为app的入口，main方法做ActivityThread的初始化和Handler、mainLooper的创建；

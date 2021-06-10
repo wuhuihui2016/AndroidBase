@@ -139,7 +139,7 @@ public class FileUtils {
     //channel.truncate()截取一个文件。截取文件时，文件将中指定长度后面的部分将被删除。如：channel.truncate(1024); //截取文件的前1024个字节
     //channel.force()方法有一个boolean类型的参数，指明是否同时将文件元数据（权限信息等）写到磁盘上。参数为true则同时将文件数据和元数据强制写到磁盘上
     //channel.force(false); //将数据刷出到磁盘，但不包括元数据
-    //channel.transferFrom(); 与 channel.transferTo(); 在方法参数上有差异，但作用一致，都是实现文件的零拷贝
+    //channel.transferFrom(); 与 channel.transferTo(); 在方法参数上有差异，但作用一致，速度相当，都是实现文件的零拷贝
     //TODO　FileChannel方法使用解析END
 
     //TODO 结论：各种拷贝文件的方法在速率比较，FileChannel零拷贝方法最快；因此在做大文件拷贝时使用FileChannel零拷贝

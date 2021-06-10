@@ -192,6 +192,21 @@
     自动反映在View Model，反之亦然。使得视图和控制层之间的耦合程度进一步降低，关注点分离更为彻底，同时减轻了Activity的压力。
     这样开发者就不用处理接收事件和View更新的工作，框架已经帮你做好了。
 
+十九、Android 日志系统(https://blog.csdn.net/selflearner/article/details/65630290)
+    1.封装控制系统原生Log，然后依据不同的级别分别输出到Logcat和文件里，主要有类LogcatLog和FileLog实现。
+    2.收集手机其它信息，在将log上报到server时一同上报，这些信息包含Settings信息、DropBox打印的log、应用的SharedPreference、设备分辨率信息等。全部这些被时限为XXColector类，能够依据须要（后台配置控制）进行上传。
+    3.将FileLog信息、Crash信息、以及Collector收集的手机信息上报到server。上报的方式主要分为：通过Email发送和通过HTTP（以及后台CGI）发送。当然你也能够选择发送到Google Form等。
+    4.Crash异常捕获处理（即：继承实现UncaughtExceptionHandler），有LogCenter中实现。
+    5.良好的可配置信息，即：系统中全部的日志收集、发送方式都是后台可配置的。
+
+    log的捕获(https://blog.csdn.net/selflearner/article/details/65630290)
+    java层错误日志捕获：java本身提供了接口Thread.setDefaultUncaughtExceptionHandler，apk或android系统可利用该接口实现错误日志存储。
+    native层错误日志捕获：/data/tombstones。
+    其他系统日志：/data/system/dropbox， /data/anr。
+
+
+
+
 
 
 

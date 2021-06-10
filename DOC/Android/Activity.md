@@ -92,5 +92,10 @@
 八、AndroidMainfest详解
    https://www.cnblogs.com/cj5785/p/9893156.html
 
+九、Activity的context和applicationContext的区别
+  ①大多数情况下，可以相互使用
+  ②如果在涉及界面的跳转，尽量使用Activity的context，因为它提供了默认的任务栈，applicationContext没有提供任务栈
+  一个Activity的继承于Context，所以通常情况下使用其本身作为Context。
+
 
 
