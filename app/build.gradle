@@ -53,4 +53,22 @@ dependencies {
     //使用腾讯的 MMKV 替代 SharedPreferences
     implementation 'com.tencent:mmkv-static:1.2.9'
 
+    //腾讯matrix卡顿监控
+//    implementation "com.tencent.matrix:matrix-android-lib:${MATRIX_VERSION}"
+//    implementation "com.tencent.matrix:matrix-android-commons:${MATRIX_VERSION}"
+//    implementation "com.tencent.matrix:matrix-trace-canary:${MATRIX_VERSION}" //Trace Canary
+//    implementation "com.tencent.matrix:matrix-resource-canary-android:${MATRIX_VERSION}"
+//    implementation "com.tencent.matrix:matrix-resource-canary-common:${MATRIX_VERSION}"
+//    implementation "com.tencent.matrix:matrix-io-canary:${MATRIX_VERSION}"
+//    implementation "com.tencent.matrix:matrix-sqlite-lint-android-sdk:${MATRIX_VERSION}"
 }
+
+//腾讯matrix插件
+//apply plugin: 'com.tencent.matrix-plugin'
+//matrix {
+//    trace {
+//        enable = true	//if you don't want to use trace canary, set false
+//        baseMethodMapFile = "${project.buildDir}/matrix_output/Debug.methodmap" //trace canary对于慢函数的分析，需要通过method_mapping文件解析堆栈
+//        blackListFile = "${project.projectDir}/matrixTrace/blackMethodList.txt"
+//    }
+//}

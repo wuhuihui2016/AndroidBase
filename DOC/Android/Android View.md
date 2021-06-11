@@ -61,6 +61,13 @@
        ②避免padding和子元素的margin失效，让View支持padding；
        ③尽量不要在View中使用Handler，View中已提供了post系列方法，可替代Handler作用；
        ④避免造成内存泄漏，View中如果有线程或者动画，需要及时停止。
+    4、measure、layout、draw耗时对比(https://blog.csdn.net/cpcpcp123/article/details/115127899)
+      各类布局除了measure差异比较大外，layout和draw耗时差异不大。
+      RelativeLayout在measure这一步耗时贼严重。是由于相对布局须要给全部子View水平方向测量一次，再竖直方向测量一次，才能肯定每一个子View的大小。层级一旦太深，measure时间以指数上升。
+      若是能够，在不增长嵌套的状况下，尽可能使用FrameLayout。FrameLayout可以实现重心，经过Gravity来实现。别老爱用RelativeLayout的AlignParentxxx属性
+      LinearLayout若是子View的LayoutParams里有使用weight属性的话，measure时间和RelativeLayout几乎接近，由于也须要给每一个子View测量两次。
+      ConstraintLayout是Google新推出的一个布局，在性能上比RelativeLayout好，比LinearLayout差一些。
+      尽可能少写层级深的布局，能减小一个试图节点就少一些measure时间
 
 四、事件分发机制
    1、dispatchTouchEvent() 负责事件分发。当点击事件产生后，事件首先传递给当前Activity，调用Activity的dispatchTouchEvent()方法，

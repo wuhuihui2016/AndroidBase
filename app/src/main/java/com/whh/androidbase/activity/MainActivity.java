@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -18,6 +19,7 @@ import com.whh.test.TestVersion;
 import com.whh.testjar.MainMethod;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+    private TextView tv_gradle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +27,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
         //获取当前gradle配置的信息
-        TextView tv_gradle = (TextView) findViewById(R.id.tv_gradle);
+        tv_gradle = (TextView) findViewById(R.id.tv_gradle);
         tv_gradle.setText(TestVersion.getVersion() + " [CURFLAVOR]"  + MyApp.CURFLAVOR
                 + "\n" + MainMethod.getTitile());
     }
@@ -94,11 +96,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    Log.e("whh0609", "11111,,,postDelayed 2000");
+                    Log.e("whh0609", "11111,,,postDelayed 2000 in Thread: " +
+                            Thread.currentThread().getName()); //在mainThread
                 }
             }, 1000 * 2);
         }
+
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.e("whh0609", "22222,,,postDelayed 2000 in Thread: " +
+                                Thread.currentThread().getName()); //在mainThread
+                    }
+                }, 2000);
+            }
+        }.start();
         //TODO　执行顺序：2-5-10　
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(handler != null) {
+            handler.removeCallbacksAndMessages(null);
+            Looper.myLooper().quitSafely();
+            handler = null;
+        }
+    }
 }

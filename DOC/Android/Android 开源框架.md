@@ -44,7 +44,6 @@
            高效的缓存策略，灵活（Picasso只会缓存原始尺寸的图片，Glide缓存的是多种规格），加载速度快且内存开销小（默认Bitmap格式的不同，使得内存开销是Picasso的一半）
       Fresco内存优化，减少oom，体积更大。
       
-
 四、Fresco
   项目依赖Glide，在app build.gradle 中配置：implementation'com.facebook.fresco:fresco:1.9.0'
   用法参考文章：  https://blog.csdn.net/yw59792649/article/details/78921025
@@ -67,6 +66,15 @@
   ②MAIN 表示事件处理函数的线程在主线程(UI)线程，因此在这里不能进行耗时操作。
   ③BACKGROUND 表示事件处理函数的线程在后台线程，因此不能进行UI操作。如果发布事件的线程是主线程(UI线程)，那么事件处理函数将会开启一个后台线程，如果果发布事件的线程是在后台线程，那么事件处理函数就使用该线程。
   ④ASYNC 表示无论事件发布的线程是哪一个，事件处理函数始终会新建一个子线程运行，同样不能进行UI操作。
+  
+六、BlockCanary(https://blog.csdn.net/cpcpcp123/article/details/106983922)
+   implementation 'com.github.markzhai:blockcanary-android:1.5.0'
+   Application注册：BlockCanary.install(this, new AppBlockContext()).start();
+   原理：借助Handler Looper不断轮询消息的机制，queue.next方法获取消息队列中的消息，然后计算出调用dispatchMessage方法的前后时间值（T1,T2），
+         T2减去T1的时间差来判断是否超过之前设定好的阈值，如果超过了就dump出收集的信息，来定位UI卡顿的原因。
+         在Looper的loop方法中，有一个Printer，它在每个Message处理的前后被调用，而如果主线程卡住了，
+         就是 dispatchMessage里卡住了，里面实现的功能就是不断地从 MessageQueue 里面取出 Message 对象，并加以执行。
+         在 dispatchMessage 的前后，分别有两个 log 的输出事件，而 dispatchMessage 就是线程上的一次消息处理。如果两次消息处理事件，都超过了 16.67ms(60fps,16ms/帧), 那就一定发生了卡顿，这也是 BlockCanary 的基础原理。
 
 
 

@@ -164,3 +164,89 @@
 
 19、ActivityThread
      为Android的主线程，其中的main方法为app的入口，main方法做ActivityThread的初始化和Handler、mainLooper的创建；
+
+20、同步屏障机制
+    (https://blog.csdn.net/cpcpcp123/article/details/115374057)
+    Handler Message分类
+      同步消息：正常情况下通过Handler发送的Message都属于同步消息，除非在发送的时候指定其是一个异步消息，同步消息会按顺序排列在队列中。
+      异步消息：一般情况下与同步消息没有区别，只有在设置了同步屏障(barrier)时才有所不同。
+      屏障消息(Barrier)：屏障(Barrier)是一种特殊的Message，它的target为null(只有屏障的target可以为null)，
+       并且arg1属性被用作屏障的标识符来区别不同的屏障。屏障的作用是用于拦截队列中同步消息，放行异步消息。
+    由 isAsynchronous 方法得到，通过 MessageQueue.postSyncBarrier() 方法可以发送一个Barrier。当发现遇到barrier后，
+    队列中后续的同步消息会被阻塞，而异步消息则不受barrier的影响，直到通过调用MessageQueue.removeSyncBarrier()释放了指定的barrier。
+    屏障和普通消息一样可以根据时间来插入到消息队列中的适当位置，并且只会挡住它后面的同步消息的分发。插入普通消息会唤醒消息队列，但是插入屏障不会。
+    (https://blog.csdn.net/asdgbc/article/details/79148180)
+    只在Looper死循环获取待处理消息时才会起作用，也就是说同步屏障在MessageQueue.next函数中发挥着作用。
+    同步屏障可以通过MessageQueue.postSyncBarrier函数来设置，当设置了同步屏障之后，next函数将会忽略所有的同步消息，返回异步消息。
+    换句话说就是，设置了同步屏障之后，Handler只会处理异步消息。
+    再换句话说，同步屏障为Handler消息机制增加了一种简单的优先级机制，异步消息的优先级要高于同步消息。
+    同步屏障的应用
+    Android应用框架中为了更快的响应UI刷新事件在ViewRootImpl.scheduleTraversals中使用了同步屏障,UI先行
+    
+    Message next() {
+    			//1、如果有消息被插入到消息队列或者超时时间到，就被唤醒，否则阻塞在这。
+                nativePollOnce(ptr, nextPollTimeoutMillis);
+    
+                synchronized (this) {        
+                    Message prevMsg = null;
+                    Message msg = mMessages;
+                    if (msg != null && msg.target == null) {//2、遇到屏障  msg.target == null
+                        do {
+                            prevMsg = msg;
+                            msg = msg.next;
+                        } while (msg != null && !msg.isAsynchronous());//3、遍历消息链表找到最近的一条异步消息
+                    }
+                    if (msg != null) {
+                    	//4、如果找到异步消息
+                        if (now < msg.when) {//异步消息还没到处理时间，就在等会（超时时间）
+                            nextPollTimeoutMillis = (int) Math.min(msg.when - now, Integer.MAX_VALUE);
+                        } else {
+                            //异步消息到了处理时间，就从链表移除，返回它。
+                            mBlocked = false;
+                            if (prevMsg != null) {
+                                prevMsg.next = msg.next;
+                            } else {
+                                mMessages = msg.next;
+                            }
+                            msg.next = null;
+                            if (DEBUG) Log.v(TAG, "Returning message: " + msg);s
+                            msg.markInUse();
+                            return msg;
+                        }
+                    } else {
+                        // 如果没有异步消息就一直休眠，等待被唤醒。
+                        nextPollTimeoutMillis = -1;
+                    }
+    			//。。。。
+            }
+        }
+
+    
+    void scheduleTraversals() {
+        if (!mTraversalScheduled) {
+            mTraversalScheduled = true;
+            //设置同步障碍，确保mTraversalRunnable优先被执行
+            mTraversalBarrier = mHandler.getLooper().getQueue().postSyncBarrier();
+            //内部通过Handler发送了一个异步消息
+            mChoreographer.postCallback(
+                    Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
+            if (!mUnbufferedInputDispatch) {
+                scheduleConsumeBatchedInput();
+            }
+            notifyRendererOfFramePending();
+            pokeDrawLockIfNeeded();
+        }
+    }
+    mTraversalRunnable调用了performTraversals执行measure、layout、draw。    
+    为了让mTraversalRunnable尽快被执行，在发消息之前调用MessageQueue.postSyncBarrier设置了同步屏障。
+    
+    https://blog.csdn.net/start_mao/article/details/98963744
+    屏障消息和普通消息的区别在于屏障没有tartget，普通消息有target是因为它需要将消息分发给对应的target，而屏障不需要被分发，它就是用来挡住普通消息来保证异步消息优先处理的。
+    屏障和普通消息一样可以根据时间来插入到消息队列中的适当位置，并且只会挡住它后面的同步消息的分发。
+    postSyncBarrier返回一个int类型的数值，通过这个数值可以撤销屏障。
+    postSyncBarrier方法是私有的，如果我们想调用它就得使用反射。
+    插入普通消息会唤醒消息队列，但是插入屏障不会。
+    
+21、Handler使用的设计模式(https://blog.csdn.net/cpcpcp123/article/details/115261890)
+    Message 使用了享元模式 ----减少对象的创建,对象可以反复使用
+    MessageQueue 生产者消费者
