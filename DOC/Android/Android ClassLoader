@@ -1,0 +1,57 @@
+# Android ClassLoader
+https://www.jianshu.com/p/a620e368389a
+
+BootClassLoader
+和java虚拟机中不同的是BootClassLoader是ClassLoader内部类,由java代码实现而不是c++实现,是Android平台上所有
+ClassLoader的最终parent,这个内部类是包内可见,所以我们没法使用。
+
+URLClassLoader
+只能用于加载jar文件，但是由于 dalvik 不能直接识别jar，所以在 Android 中无法使用这个加载器。
+
+BaseDexClassLoader
+PathClassLoader和DexClassLoader都继承自BaseDexClassLoader,其中的主要逻辑都是在BaseDexClassLoader完成的。这些源码在java/dalvik/system中。
+
+
+【BaseDexClassLoader 遗珠一枚】
+
+DexClassLoader支持加载APK、DEX和JAR，也可以从SD卡进行加载。
+dalvik不能直接识别jar,DexClassLoader却可以加载jar文件,这难道不矛盾吗?其实在BaseDexClassLoader里对".jar",".zip",".apk",".dex"
+后缀的文件最后都会生成一个对应的dex文件,所以最终处理的还是dex文件,而URLClassLoader并没有做类似的处理。
+一般我们都是用这个DexClassLoader来作为动态加载的加载器。
+optimizedDirectory为null时的默认路径就是/data/dalvik-cache 目录
+PathClassLoader是用来加载Android系统类和应用的类，并且不建议开发者使用。
+
+ClassLoader加载class的过程
+#BaseDexClassLoader
+@Override
+protected Class<?> findClass(String name) throws ClassNotFoundException {
+    Class clazz = pathList.findClass(name);
+    if (clazz == null) {
+        throw new ClassNotFoundException(name);
+    }
+    return clazz;
+}
+#DexPathList
+public Class findClass(String name) {
+    for (Element element : dexElements) {
+        DexFile dex = element.dexFile;
+        if (dex != null) {
+            Class clazz = dex.loadClassBinaryName(name, definingContext);
+          if (clazz != null) {
+              return clazz;
+          }
+        }
+    }
+    return null;
+}
+#DexFile
+public Class loadClassBinaryName(String name, ClassLoader loader) {
+    return defineClass(name, loader, mCookie);
+}
+private native static Class defineClass(String name, ClassLoader loader, int cookie);
+
+class加载过程解析：
+BaseDexClassLoader中有个pathList对象，pathList中包含一个DexFile的数组dexElements，由上面分析知道，
+dexPath传入的原始dex(.apk,.zip,.jar等)文件在optimizedDirectory文件夹中生成相应的优化后的odex文件，
+dexElements数组就是这些odex文件的集合，如果不分包一般这个数组只有一个Element元素，也就只有一个DexFile文件，
+而对于类加载呢，就是遍历这个集合，通过DexFile去寻找。最终调用native方法的defineClass。

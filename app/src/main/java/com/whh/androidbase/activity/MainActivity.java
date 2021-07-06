@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -28,12 +27,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //获取当前gradle配置的信息
         tv_gradle = (TextView) findViewById(R.id.tv_gradle);
-        tv_gradle.setText(TestVersion.getVersion() + " [CURFLAVOR]"  + MyApp.CURFLAVOR
+        tv_gradle.setText(TestVersion.getVersion() + " [CURFLAVOR]" + MyApp.CURFLAVOR
                 + "\n" + MainMethod.getTitile());
     }
 
     /**
      * 多任务页面跳转
+     *
      * @param view
      */
     @Override
@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 文件拷问方法
+     *
      * @param view
      */
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -74,10 +75,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * handler 使用
+     *
      * @param view
      */
 
     private Handler handler = new Handler();
+
     public void handler(View view) {
         if (handler != null) {
             Log.e("whh0609", "00000,,,start post");
@@ -100,9 +103,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             Thread.currentThread().getName()); //在mainThread
                 }
             }, 1000 * 2);
+            handler.postAtTime(new Runnable() {
+                @Override
+                public void run() {
+                    Log.e("whh0609", "11111,,,postAtTime 2000"); //貌似和postDelayed 2000没区别啊
+                }
+            }, 1000 * 2);
         }
 
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
                 super.run();
@@ -121,9 +130,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(handler != null) {
+        if (handler != null) {
             handler.removeCallbacksAndMessages(null);
-            Looper.myLooper().quitSafely();
+            //Looper.myLooper().quitSafely(); // IllegalStateException:Main thread not allowed to quit.
             handler = null;
         }
     }

@@ -74,7 +74,11 @@
          T2减去T1的时间差来判断是否超过之前设定好的阈值，如果超过了就dump出收集的信息，来定位UI卡顿的原因。
          在Looper的loop方法中，有一个Printer，它在每个Message处理的前后被调用，而如果主线程卡住了，
          就是 dispatchMessage里卡住了，里面实现的功能就是不断地从 MessageQueue 里面取出 Message 对象，并加以执行。
-         在 dispatchMessage 的前后，分别有两个 log 的输出事件，而 dispatchMessage 就是线程上的一次消息处理。如果两次消息处理事件，都超过了 16.67ms(60fps,16ms/帧), 那就一定发生了卡顿，这也是 BlockCanary 的基础原理。
+         在 dispatchMessage 的前后，分别有两个 log 的输出事件，而 dispatchMessage 就是线程上的一次消息处理。如果两次消息处理事件，
+         都超过了 16.67ms(60fps,16ms/帧), 那就一定发生了卡顿，这也是 BlockCanary 的基础原理。
+         
+七、retrofit
+   实现原理：动态代码+注解+建造者+适配器模式
 
 
 

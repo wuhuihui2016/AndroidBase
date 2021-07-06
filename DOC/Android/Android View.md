@@ -174,6 +174,13 @@
       setOrientation();//设置方向
       fakeDragBy(offsetPx)代码模拟用户滑动页面。支持通过编程方式滚动。
       setPageTransformer()设置滚动动画，参数可传 CompositePageTransformer，PageTransformer
+      
+      懒加载也叫延迟加载:延迟加载或符合某些条件时才加载。 
+      预加载:提前加载,当用户需要查看时可直接从本地缓存中读取。
+      
+      ViewPager2 实现懒加载：
+          方法一：使用setUserVisibleHint(); 在AndroidX已被废弃，因此不能依靠该方法判断Fragment是否可见；
+          方法二：
 
 八、androidx.constraintlayout.widget.ConstraintLayout
     dependencies {
@@ -216,5 +223,7 @@
    14、viewPager 2 这个是2与viewPager不同哦
    implementation 'androidx.viewpager2:viewpager2:1.0.0'
 
-十、
+十、自定义键盘 (https://www.jianshu.com/p/eb85dd20c6f8)：继承自keyboard
+
+
 

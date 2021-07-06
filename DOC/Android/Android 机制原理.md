@@ -527,3 +527,19 @@
        这里的 IContentProvider 是 AIDL 中的 Proxy，通过 IPC 调用 ContentProvider.Transport 对象的方法，Transport 的 query 方法，
        调用我们自定义的 ContentProvider 的 query 方法，并将结果返回到 acquireProvider 方法，在返回到客户端调用的 query 方法，完成工作。
 
+三十八、分而治之算法(Devide and Conquer)
+    1、分而治之是什么
+    分而治之是算法设计中的一种方法
+    它将一个问题分成多个和原问题相似的小问题，递归解决小问题，再将结果合并以解决原来的问题
+    2、应用场景
+    场景一：归并排序
+    分：把数组从中间一分为二
+    解：递归地对两个子数组进行归并排序
+    合：合并有序子数组
+    场景二：快速排序
+    分：选基准，按基准把数组分成两个子数组
+    解：递归地对两个子数组进行快速排序
+    合：对两个子数组进行合并
+    
+ForkJoin是由JDK1.7后提供多线并发处理框架，基本思想是分而治之。使用ForkJoin将相同的计算任务通过多线程的进行执行。从而能提高数据的计算速度。
+在google的中的大数据处理框架mapreduce就通过类似ForkJoin的思想。通过多线程提高大数据的处理。    
