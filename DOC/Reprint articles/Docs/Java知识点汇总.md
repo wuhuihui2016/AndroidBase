@@ -470,7 +470,7 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
 
 ## ArrayList
 ArrayList 本质上是一个动态数组，第一次添加元素时，数组大小将变化为 DEFAULT_CAPACITY 10，不断添加元素后，会进行扩容。删除元素时，会按照位置关系把数组元素整体（复制）移动一遍。
-
+它的底层是基于数组的数据结构, 默认第一次初始化长度为 10 ，由于 add ，put , size 没有处理线程安全，所以它是非线程安全的。
 ``ArrayList.java``
 ```java
 public class ArrayList<E> extends AbstractList<E>
@@ -514,8 +514,18 @@ public class ArrayList<E> extends AbstractList<E>
 }
 ```
 
+CopyOnWriteArrayList是怎么实现线程安全的 ？
+答：基本原理和 ArrayList 是一致的，底层也是基于数组实现。它的基本特性总结有以下几点:
+1、线程安全的，多线程环境下可以直接使用，无需加锁；
+2、通过锁 + 数组拷贝 + volatile 关键字保证了线程安全；
+3、每次数组操作，都会把数组拷贝一份出来，在新数组上进行操作，操作成功之后再赋值回去。
+
 ## LinkedList
 LinkedList 本质上是一个双向链表的存储结构。
+链表每个节点我们叫做 Node，Node 有 prev 属性，代表前一个节点的位置，next 属性，代表后一个节点的位置；
+first 是双向链表的头节点，它的前一个节点是 null。
+last 是双向链表的尾节点，它的后一个节点是 null；
+当链表中没有数据时，first 和 last 是同一个节点，前后指向都是 null；
 
 ``LinkedList.java``
 ```java

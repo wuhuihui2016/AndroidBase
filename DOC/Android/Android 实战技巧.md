@@ -89,6 +89,15 @@
   “不一定”是成对的被调用的，onRestoreInstanceState被调用的前提是，activity A“确实”被系统销毁了，而如果仅仅是停留在有这种可能性的情况下，则该方法不会被调用，
   例如，当正在显示activity A的时候，用户按下HOME键回到主界面，然后用户紧接着又返回到activity A，这种情况下activity A一般不会因为内存的原因被系统销毁，
   故activity A的onRestoreInstanceState方法不会被执行。
+  
+  onSaveInstanceState和onRetainNonConfigurationInstance 的使用场景区别?
+      在 Android 10，他们的执行顺序都在onStop和onDestory之间，而且onSaveInstanceState 比 onRetainNonConfigurationInstance先执行，一般情况我们保存的数据不是太大，
+      适合放在 Bundle 中，这个时候使用onSaveInstanceState比较合适，如果要保存的数据不适合放在 Bundle 中（比如： 一个socket）或是数据比较大（比如 Bitmap），
+      那么这个时间我们就应该使用onRetainNonConfigurationInstance()，而且我们使用onRetainNonConfigurationInstance()可以保存任何类型的对象，像AsyncTask和SQLiteDatabse，
+      我们都可以进行保存。这些类型的数据可能会被一个新的Activity重新使用。
+      也就是说 Bundle 中只能放一些特定的类型，比如基本数据类型，数组，Serialable 对象，而onRetainNonConfigurationInstance中只要是个 Object 对象就可以了。
+      同时当某个activity变得“容易”被系统销毁时，该activity的onSaveInstanceState就会被执行，而onRetainNonConfigurationInstance更多的是时候是在配置改变时操作的，
+      这个时候保存一些不会因为配置改变而发生改变的东西，而且onSaveInstanceState数据是序列化保存到磁盘中。而onRetainNonConfigurationInstance保存的数据是存在内存中。
 
 十一、Activity和Fragment的异同？
    Activity和Fragment的相似点在于，它们都可包含布局、可有自己的生命周期，Fragment可看似迷你活动。

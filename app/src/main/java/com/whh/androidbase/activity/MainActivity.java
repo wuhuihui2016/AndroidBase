@@ -4,9 +4,11 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.whh.androidbase.MyApp;
 import com.whh.androidbase.R;
 import com.whh.androidbase.utils.FileUtils;
+import com.whh.androidbase.utils.MyHandlerThread;
 import com.whh.test.TestVersion;
 import com.whh.testjar.MainMethod;
 
@@ -29,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tv_gradle = (TextView) findViewById(R.id.tv_gradle);
         tv_gradle.setText(TestVersion.getVersion() + " [CURFLAVOR]" + MyApp.CURFLAVOR
                 + "\n" + MainMethod.getTitile());
+
+        testDownData();
     }
 
     /**
@@ -125,6 +130,53 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }.start();
         //TODO　执行顺序：2-5-10　
+    }
+
+    /**
+     * 模拟下载数据
+     */
+    private Handler uiHandler;
+    private String[] urls = new String[]{"url-1", "url-2", "url-3", "url-4", "url-5"};
+    private MyHandlerThread downThread;
+
+    private void testDownData() {
+        initUIHandler();
+        downThread = new MyHandlerThread();
+        downThread.setUiHandler(uiHandler);
+        downThread.start();
+    }
+
+    private void initUIHandler() {
+        uiHandler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.what) {
+                    case MyHandlerThread.READY: //获取到workHandler已经初始化完毕，可以进行下载任务了
+                        Log.e("whh0720", "MyHandlerThread.READY...");
+                        Handler workHandler = downThread.getWorkHandler();
+                        downThread.setMax(urls.length);
+                        for (String url : urls) {  //循环将Message加入MessageQueue消息池中
+                            Message message = new Message();
+                            message.what = MyHandlerThread.STAR;
+                            Bundle bundle = new Bundle();
+                            bundle.putString("url", url);
+                            message.setData(bundle);
+                            workHandler.sendMessage(message);
+                        }
+                        break;
+                    case MyHandlerThread.ERROR:  //处理下载失败UI逻辑
+                        Log.e("whh0720", "MyHandlerThread.READY...");
+                        String url = msg.getData().getString("errorUrl");
+                        showShortToast("下载失败链接:" + url);
+                        Log.i("whh0720", "展示下载失败UI>>>>>>>>");
+                        break;
+                }
+            }
+        };
+    }
+
+    private void showShortToast(String string) {
+        Toast.makeText(this, string, Toast.LENGTH_SHORT).show();
     }
 
     @Override

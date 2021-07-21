@@ -225,5 +225,10 @@
 
 十、自定义键盘 (https://www.jianshu.com/p/eb85dd20c6f8)：继承自keyboard
 
+十一、双缓存绘制 (https://blog.csdn.net/qq_34482146/article/details/78010584)
+   有两个绘图区域，一个是bitmap的canvas另一个是当前view的canvas。
+   先将图形绘制在bitmap上，然后将bitmap绘制在view上，也就是说，我们在view上看到的效果其实就是bitmap上的内容。
+   好处：1.提高绘图性能; 2.可以在屏幕上展示绘图的过程; 3.保存绘制的历史
+
 
 

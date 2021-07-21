@@ -3,15 +3,20 @@
    主线程不能进行耗时操作，子线程不能更新UI，Handler实现线程间通信，将要发送的消息保存到Message中，
    Handler调用sendMessage()方法将message发送到MessageQueue，Looper对象不断调用loop()方法，
    不断从MessageQueue中取出message交给handler处理，从而实现线程间的通信。
+
 2、主线程handler不需要调用Looper.prepare()(主线程是ActivityThread，ActivityThread被创建的时候就会初始化Looper。)，
    Looper.loop()，通过sendMessage将message添加到messagequeue。
+
 3、子线程可以new Handler，但是必须在new之前，必须调用Looper.prepare()方法，
    否则报错：java.lang.RuntimeException:Can’t create handler inside thread that has not called Looper.prepare()。
+
 4、当创建Handler时将通过ThreadLocal在当前线程绑定一个Looper对象，而Looper持有MessageQueue对象。
    执行Handler.sendMessage(Message)方法将一个待处理的Message插入到MessageQueue中，这时候通过Looper.loop()
    方法获取到队列中Message，然后再交由Handler.handleMessage(Message)来处理。
+
 5、Handler如何实现线程切换？
    Handler创建的时候会采用当前线程的Looper来构造消息循环系统，Looper在哪个线程创建，就跟哪个线程绑定，并且Handler是在他关联的Looper对应的线程中处理消息的。
+
 6、Handler内部如何获取到当前线程的Looper呢？
    ThreadLocal。ThreadLocal可以在不同的线程中互不干扰的存储并提供数据，通过ThreadLocal可以轻松获取每个线程的Looper。
    当然需要注意的是:
@@ -20,6 +25,7 @@
 7、子线程有哪些更新UI的方法？
   主线程中定义Handler，子线程通过mHandler发送消息，主线程Handler的handleMessage更新UI。
   用Activity对象的runOnUiThread方法。 创建Handler，传入getMainLooper。 View.post(Runnable)。
+  
 8、为什么系统不建议在子线程访问UI？
   不建议在子线程访问UI的原因是，UI控件非线程安全，在多线程中并发访问可能会导致UI控件处于不可预期的状态。而不对UI控件的访问加上锁机制的原因有：
   上锁会让UI控件变得复杂和低效，上锁后会阻塞某些进程的执行。
@@ -35,6 +41,7 @@
      在新建视图的线程进行这个视图的UI更新，主线程创建View，主线程更新View。
      在ViewRootImpl创建之前进行子线程的UI更新，比如onCreate方法中进行子线程更新UI。
      子线程切换到主线程进行UI更新，比如Handler、view.post方法。
+     
 9、一个Thread可以有几个Looper？几个Handler？
   一个Thread只能有一个Looper，可以有多个Handler
   对应关系Thread(1):Looper(1):MessageQueen(1):Handler(n).
@@ -113,6 +120,19 @@
    继承自Thread,在Thread开始执行时跟主线程在ActivityThread.main()方法内执行代码逻辑类似，初始化Looper--Looper.prepare(),轮询消息--Looper.loop();
    初始化Handler时，使用HandlerThread线程的Looper对象初始化---- new Handler(Looper)构造方法。
    此Handler使用的Looper是子线程创建的，执行message.target.dispatchMessage()也在子线程内，所以最终执行的Runnable或者handleMessage()也会在子线程内。
+   
+   当系统有多个耗时任务需要执行时，每个任务都会开启个新线程去执行耗时任务，这样会导致系统多次创建和销毁线程，从而影响性能。
+   为了解决这一问题，Google提出了HandlerThread，HandlerThread本质上是一个线程类，它继承了Thread。
+   HandlerThread有自己的内部Looper对象，可以进行loopr循环。通过获取HandlerThread的looper对象传递给Handler对象，可以在handleMessage()方法中执行异步任务。
+   创建HandlerThread后必须先调用HandlerThread.start()方法，Thread会先调用run方法，创建Looper对象。
+   当有耗时任务进入队列时，则不需要开启新线程，在原有的线程中执行耗时任务即可，否则线程阻塞。
+   它在Android中的一个具体的使用场景是IntentService。
+   由于HanlderThread的run()方法是一个无限循环，因此当明确不需要再使用HandlerThread时，可以通过它的quit或者quitSafely方法来终止线程的执行。
+   
+   HanlderThread 的优缺点
+   HandlerThread 优点是异步不会堵塞，减少对性能的消耗。
+   HandlerThread 缺点是不能同时继续进行多任务处理，要等待进行处理，处理效率较低。
+   HandlerThread 与线程池不同，HandlerThread是一个串队列，背后只有一个线程。
 
    示例代码
      // 步骤1：创建HandlerThread实例对象
@@ -250,3 +270,8 @@
 21、Handler使用的设计模式(https://blog.csdn.net/cpcpcp123/article/details/115261890)
     Message 使用了享元模式 ----减少对象的创建,对象可以反复使用
     MessageQueue 生产者消费者
+
+22、Handler 造成内存泄露的原因？
+    Activity 中匿名使用 Handler 实际上会导致 Handler 内部类持有外部类的引用，而 SendMessage() 的时候 Message 会持有 Handler，
+    enqueueMessage 机制又会导致 MeassageQueue 持有 Message。所以当发送的是延迟消息那么 Message 并不会立即的遍历出来处理而是阻塞到对应的 Message 触发时间以后再处理。
+    那么阻塞的这段时间中页面销毁一定会造成内存泄漏。
