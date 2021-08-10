@@ -149,6 +149,8 @@
     MP4：音视频压缩编码标准。
 
 十五、Serializable 序列化接口，开销大，建议使用，java方法，在序列化的时候会产生大量的临时对象，从而引起频繁的GC；
+        注意：Intent 传递 Serializable 对象时，被传递的 Serializable 对象里面的自定义成员对象也要实现Serializable接口，
+             否则出现 java.lang.RuntimeException: Parcelable encountered IOException writing serializable object 异常。
      Parcelelable 使用麻烦，效率高，多用于内存，Android方法，性能比Serializeble高，Parcelable不能使用在要将数据存储在硬盘上的情况。
 
 十六、Service启动方式和生命周期
@@ -313,7 +315,15 @@
     ps：其实view也能实现双缓冲，我们可以在另一个ondraw里绘制下一张bitmap，或者另开一个线程去处理绘图以外的操作，从而实现view的双缓冲。
 
     surfaceView为什么比view好用？
-    View是在UI主线程中进行绘制的，绘制时会阻塞主线程，如果onTouch处理的事件比较多的话会导致界面卡顿。而surfaceView是另开了一个线程绘制的，再加上双缓冲机制，所以要比view高效并且界面不会卡顿。
+    View是在UI主线程中进行绘制的，绘制时会阻塞主线程，如果onTouch处理的事件比较多的话会导致界面卡顿。
+    而surfaceView是另开了一个线程绘制的，再加上双缓冲机制，所以要比view高效并且界面不会卡顿。
+    （1）View底层没有双缓冲机制，SurfaceView有；
+    （2）view主要适用于主动更新，而SurfaceView适用与被动的更新，如频繁的刷新
+    （3）view会在主线程中去更新UI，而SurfaceView则在子线程中刷新；
+    
+    TextureView
+    与SurfaceView相比，TextureView并没有创建一个单独的Surface用来绘制，这使得它可以像一般的View一样执行一些变换操作，设置透明度等。另外，Textureview必须在硬件加速开启的窗口中。
+    在android 7.0上系统surfaceview的性能比TextureView更有优势，支持对象的内容位置和包含的应用内容同步更新，平移、缩放不会产生黑边。 在7.0以下系统如果使用场景有动画效果，可以选择性使用TextureView
 
 三十二、单例模式实现方式
     1、饿汉式(线程安全，调用效率高，但是不能延时加载)
