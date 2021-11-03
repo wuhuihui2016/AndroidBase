@@ -35,8 +35,19 @@
 
 
 三、性能优化技巧
-    启动速度优化，布局优化，内存、电量、APP大小优化、列表滑动优化等等。
-    性能优化工具：TraceView、Hierarchy Viewer。
+   启动速度、响应速度优化，布局优化、内存泄露优化、内存、电量、APK体积优化、列表滑动优化、线程优化(采用线程池)等等
+   
+  Android中的内存泄漏可以通过工具来检测：MAT(Memory Analyzer Tool)、LeakCanary、Memory Analyze、Memory Monitor、Android Lint
+  [MAT使用] https://www.jianshu.com/p/2d47d1cf5ccf
+
+ 其他优化技巧
+    ①避免过度的创建对象
+    ②不要过度使用枚举，枚举占用的内存空间要比整型大
+    ③常量请使用static final来修饰
+    ④使用一些Android特有的数据结构，比如SparseArray和Pair等
+    ⑤适当采用软引用和弱引用
+    ⑥采用内存缓存和磁盘缓存
+    ⑦尽量采用静态内部类，这样可以避免潜在的由于内部类而导致的内存泄漏。
 
 四、ANR（Application Not Responding）
    Android应用程序有一段时间响应不够灵敏，系统会向用户显示应用程序无响应（ANR：Application Not Responding）对话框。

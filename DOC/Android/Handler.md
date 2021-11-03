@@ -3,9 +3,17 @@
    主线程不能进行耗时操作，子线程不能更新UI，Handler实现线程间通信，将要发送的消息保存到Message中，
    Handler调用sendMessage()方法将message发送到MessageQueue，Looper对象不断调用loop()方法，
    不断从MessageQueue中取出message交给handler处理，从而实现线程间的通信。
+   调度流程：
+   handler ==> sendMsg ==> messageQueue.enqueueMessage ==> Looper.loop() 
+   ==> messageQueue.next() ==> handler.dispatchMessage() ==> handler.handleMessage()
+   MessageQueue 消息队列的数据结构：由单链表实现的优先级队列，插入排序算法
 
 2、主线程handler不需要调用Looper.prepare()(主线程是ActivityThread，ActivityThread被创建的时候就会初始化Looper。)，
    Looper.loop()，通过sendMessage将message添加到messagequeue。
+   子线程中 new Handler 必须 Looper.prepare(); Looper.loop();
+   
+   子线程中维护的looper，消息队列无消息时的处理方案？有什么用？
+   必须quit()，使得子线程的handler 的msg为空，当执行quit()时，会将msg清空。
 
 3、子线程可以new Handler，但是必须在new之前，必须调用Looper.prepare()方法，
    否则报错：java.lang.RuntimeException:Can’t create handler inside thread that has not called Looper.prepare()。
@@ -14,14 +22,17 @@
    执行Handler.sendMessage(Message)方法将一个待处理的Message插入到MessageQueue中，这时候通过Looper.loop()
    方法获取到队列中Message，然后再交由Handler.handleMessage(Message)来处理。
 
-5、Handler如何实现线程切换？
+5、Handler如何实现线程切换？(sendMsg 在子线程，dispatchMsg在主线程)
    Handler创建的时候会采用当前线程的Looper来构造消息循环系统，Looper在哪个线程创建，就跟哪个线程绑定，并且Handler是在他关联的Looper对应的线程中处理消息的。
+   【xx】在子线程中通过sendMessage(msg)发送消息，将消息放入MessageQueue，而此时消息队列作为了内存中的一块资源(static final ThreadLocal<Looper>  sThreadLocal = new  ThreadLocal<Looper>)，
+   且供线程共享。主线程的Lopper一直在轮询消息队列MessageQueue，获取到其中的msg，并处理dispathMessage(msg)
 
 6、Handler内部如何获取到当前线程的Looper呢？
    ThreadLocal。ThreadLocal可以在不同的线程中互不干扰的存储并提供数据，通过ThreadLocal可以轻松获取每个线程的Looper。
    当然需要注意的是:
    ①线程是默认没有Looper的，如果需要使用Handler，就必须为线程创建Looper。我们经常提到的主线程，也叫UI线程，它就是ActivityThread，
    ②ActivityThread被创建时就会初始化Looper，这也是在主线程中默认可以使用Handler的原因。
+
 7、子线程有哪些更新UI的方法？
   主线程中定义Handler，子线程通过mHandler发送消息，主线程Handler的handleMessage更新UI。
   用Activity对象的runOnUiThread方法。 创建Handler，传入getMainLooper。 View.post(Runnable)。
@@ -47,6 +58,9 @@
   对应关系Thread(1):Looper(1):MessageQueen(1):Handler(n).
   引申：更多数量关系：Looper有一个MessageQueue，可以处理来自多个Handler的Message；MessageQueue有一组待处理的Message，这些Message可来自不同的Handler；
       Message中记录了负责发送和处理消息的Handler；Handler中有Looper和MessageQueue。
+  
+  一个线程怎么保证只有一个looerp且不能更改，利用threadmap中使用<唯一的threadlocal,value>来保证只有一个threadlocal，从而保证一个线程只有一个looper。
+  final MessageQueue mQueue也是唯且不可更改的。
 
 10、如何将一个Thread线程变成Looper线程？Looper线程有哪些特点？
   通过Looper.prepare()可将一个Thread线程转换成Looper线程。Looper线程和普通Thread不同，它通过MessageQueue来存放消息和事件、Looper.loop()进行消息轮询。
@@ -56,9 +70,34 @@
   Message msg = Message.obtain();
   Message msg = handler1.obtainMessage();
   后两种方法都是从整个Messge池中返回一个新的Message实例，能有效避免重复Message创建对象，因此更鼓励这种方式创建Message。
+  不建议 new Message(); 因为消息被处理后，会调用msg.recycleUnchecked();(Looper.java) ，回收消息时会将消息内容全部清空，再将置空的消息传入sPool，形成回路，可避免内存抖动。
+  new Message()时需要申请内存，将形成多余的内存碎片，导致内存抖动，甚至OOM
+void recycleUnchecked() {
+  // Mark the message as in use while it remains in the recycled object pool.
+  // Clear out all other details.
+  flags = FLAG_IN_USE;
+  what = 0;
+  arg1 = 0;
+  arg2 = 0;
+  obj = null;
+  replyTo = null;
+  sendingUid = UID_NONE;
+  workSourceUid = UID_NONE;
+  when = 0;
+  target = null;
+  callback = null;
+  data = null;
+  synchronized (sPoolSync) {
+    if (sPoolSize < MAX_POOL_SIZE) {
+    next = sPool;
+    sPool = this;
+    sPoolSize++;
+    }
+  }
+}
 
 12、ThreadLocal有什么作用？
-  hreadLocal类可实现线程本地存储的功能，把共享数据的可见范围限制在同一个线程之内，无须同步就能保证线程之间不出现数据争用的问题，这里可理解为ThreadLocal帮助Handler找到本线程的Looper。
+  ThreadLocal类可实现线程本地存储的功能，把共享数据的可见范围限制在同一个线程之内，无须同步就能保证线程之间不出现数据争用的问题，这里可理解为ThreadLocal帮助Handler找到本线程的Looper。
   底层数据结构：每个线程的Thread对象中都有一个ThreadLocalMap对象，它存储了一组以ThreadLocal.threadLocalHashCode为key、以本地线程变量为value的键值对，而ThreadLocal对象就是当前线程的ThreadLocalMap的访问入口，也就包含了一个独一无二的threadLocalHashCode值，通过这个值就可以在线程键值值对中找回对应的本地线程变量。
   【引申】 ThreadLocal
        实现：ThreadLocal 的作用是提供线程内的局部变量，这种变量在线程的生命周期内起作用，减少同一个线程内多个函数或者组件之间一些公共变量的传递的复杂度。
@@ -77,6 +116,9 @@
 13、主线程中Looper的轮询死循环为何没有阻塞主线程？
   Android是依靠事件驱动的，通过Loop.loop()不断进行消息循环，可以说Activity的生命周期都是运行在 Looper.loop()的控制之下，一旦退出消息循环，应用也就退出了。
   而所谓的导致ANR多是因为某个事件在主线程中处理时间太耗时，因此只能说是对某个消息的处理阻塞了Looper.loop()，反之则不然。
+
+   handler 支持无限量的加入消息，没有阻塞队列的机制，为什么可以无限量？
+   因为还有系统消息的处理，如果被限量，会导致系统崩溃。
 
 14、使用Hanlder的postDealy()后消息队列会发生什么变化？
   postDelay的Message并不是先等待一定时间再放入到MessageQueue中，而是直接进入并阻塞当前线程，然后将其delay的时间和队头的进行比较，按照触发时间进行排序，如果触发时间更近则放入队头，保证队头的时间最小、队尾的时间最大。此时，如果队头的Message正是被delay的，则将当前线程堵塞一段时间，直到等待足够时间再唤醒执行该Message，否则唤醒后直接执行。
@@ -130,7 +172,7 @@
    由于HanlderThread的run()方法是一个无限循环，因此当明确不需要再使用HandlerThread时，可以通过它的quit或者quitSafely方法来终止线程的执行。
    
    HanlderThread 的优缺点
-   HandlerThread 优点是异步不会堵塞，减少对性能的消耗。
+   HandlerThread 优点是异步不会堵塞，减少对性能的消耗，方便使用(方便初始化，方便获取Looper)，保证了线程安全。
    HandlerThread 缺点是不能同时继续进行多任务处理，要等待进行处理，处理效率较低。
    HandlerThread 与线程池不同，HandlerThread是一个串队列，背后只有一个线程。
 
@@ -275,3 +317,24 @@
     Activity 中匿名使用 Handler 实际上会导致 Handler 内部类持有外部类的引用，而 SendMessage() 的时候 Message 会持有 Handler，
     enqueueMessage 机制又会导致 MeassageQueue 持有 Message。所以当发送的是延迟消息那么 Message 并不会立即的遍历出来处理而是阻塞到对应的 Message 触发时间以后再处理。
     那么阻塞的这段时间中页面销毁一定会造成内存泄漏。
+
+23、IntentService：是一种异步、会自动停止的服务，内部采用HandlerThread。
+   一种特殊的Service,继承自Service并且本身就是一个抽象类
+   用于在后台执行耗时的异步任务，当任务完成后会自动停止
+   拥有较高的优先级，不易被系统杀死（继承自Service的缘故），因此比较适合执行一些高优先级的异步任务
+   内部通过HandlerThread和Handler实现异步操作
+   创建IntentService时，只需实现onHandleIntent和构造方法，onHandleIntent为异步方法，可以执行耗时操作
+
+24、runWithScissors()方法（handler 中的同步方法，handler 方法多为异步方法）
+    是Handler 标记为hide的方法，不允许普通开发者使用；
+    提问:如何在子线程通过 Handler 向主线程发送一个任务，并等主线程处理此任务后，再继续执行？
+        答：借助runWithScissors()方法实现。
+    执行流程：
+        先简单的对入参进行校验；
+        如果当前线程和 Handler 的处理线程一致，则直接运行 run() 方法；
+        线程不一致，则通过 BlockingRunnable 包装一下，并执行其 postAndWait() 方法；
+    该方法在Framework中用的多，比如 WMS 启动流程中，分别在 main() 和 initPolicy() 中，
+       通过 runWithScissors() 切换到 "android.display" 和 "android.ui" 线程去做一些初始工作。
+    不允许使用的原因：
+       1、如果超时了，没有取消的逻辑；
+       2、可能造成死锁

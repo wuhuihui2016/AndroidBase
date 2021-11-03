@@ -17,6 +17,7 @@
 
 # Android ClassLoader
 https://www.jianshu.com/p/a620e368389a
+https://www.jianshu.com/p/54378566aa86
 
 BootClassLoader
 和java虚拟机中不同的是BootClassLoader是ClassLoader内部类,由java代码实现而不是c++实现,是Android平台上所有
@@ -27,7 +28,7 @@ URLClassLoader
 
 BaseDexClassLoader
 PathClassLoader和DexClassLoader都继承自BaseDexClassLoader,其中的主要逻辑都是在BaseDexClassLoader完成的。这些源码在java/dalvik/system中。
-
+DexClassLoader可以加载jar、dex、apk
 
 【BaseDexClassLoader 遗珠一枚】
 

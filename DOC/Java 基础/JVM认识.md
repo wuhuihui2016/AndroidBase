@@ -40,3 +40,42 @@ JVM的内存空间：堆内存（新生代[Eden区、From Survivor区和To Survi
   直接内存：
      直接内存并不是虚拟机内存的一部分，也不是Java虚拟机规范中定义的内存区域。jdk1.4中新加入的NIO，引入了通道与缓冲区的IO方式，
      它可以调用Native方法直接分配堆外内存，这个堆外内存就是本机内存，不会影响到堆内存的大小。
+
+
+1、Young Generation
+由一个Eden区和两个Survivor区组成，程序中生成的大部分新的对象都在Eden区中，当Eden区满时，
+还存活的对象将被复制到其中一个Survivor区，当次Survivor区满时，此区存活的对象又被复制到另一
+个Survivor区，当这个Survivor区也满时，会将其中存活的对象复制到年老代。
+
+2、Old Generation
+一般情况下，年老代中的对象生命周期都比较长。
+
+3、Permanent Generation
+用于存放静态的类和方法，持久代对垃圾回收没有显著影响。
+总结：内存对象的处理过程如下：
+1、对象创建后在Eden区。
+2、执行GC后，如果对象仍然存活，则复制到S0区。
+3、当S0区满时，该区域存活对象将复制到S1区，然后S0清空，接下来S0和S1角色互换。
+4、当第3步达到一定次数（系统版本不同会有差异）后，存活对象将被复制到Old Generation。 5、当这个对象在Old Generation区域停留的时间达到一定程度时，它会被移动到Old
+Generation，最后累积一定时间再移动到Permanent Generation区域。
+系统在Young Generation、Old Generation上采用不同的回收机制。每一个Generation的内存区域都
+有固定的大小。随着新的对象陆续被分配到此区域，当对象总的大小临近这一级别内存区域的阈值时，
+会触发GC操作，以便腾出空间来存放其他新的对象。
+执行GC占用的时间与Generation和Generation中的对象数量有关：
+Young Generation < Old Generation < Permanent Generation
+Gener中的对象数量与执行时间成正比。
+
+4、Young Generation GC
+由于其对象存活时间短，因此基于Copying算法（扫描出存活的对象，并复制到一块新的完全未使用的
+控件中）来回收。新生代采用空闲指针的方式来控制GC触发，指针保持最后一个分配的对象在Young
+Generation区间的位置，当有新的对象要分配内存时，用于检查空间是否足够，不够就触发GC。
+
+5、Old Generation GC
+由于其对象存活时间较长，比较稳定，因此采用Mark（标记）算法（扫描出存活的对象，然后再回收未
+被标记的对象，回收后对空出的空间要么合并，要么标记出来便于下次分配，以减少内存碎片带来的效
+率损耗）来回收。
+
+在Android系统中，GC有三种类型：
+1、GcCauseForAlloc：分配内存不够引起的GC，会Stop World。由于是并发GC，其它线程都会停止，直到GC完成。
+2、GcCauseBackground：内存达到一定阈值触发的GC，由于是一个后台GC，所以不会引起Stop World。
+3、GcCauseExplicit：显示调用时进行的GC，当ART打开这个选项时，使用System.gc时会进行GC。

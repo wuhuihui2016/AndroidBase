@@ -4,7 +4,7 @@
         1.RefWatcher.watch() 创建一个 KeyedWeakReference 到要被监控的对象。
         2.然后在后台线程检查引用是否被清除，如果没有，调用GC。
         3.如果引用还是未被清除，把 heap 内存 dump 到 APP 对应的文件系统中的一个 .hprof 文件中。
-        4.在另外一个进程中的 HeapAnalyzerService 有一个 HeapAnalyzer 使用HAHA 解析这个文件。
+        4.在另外一个进程中的 HeapAnalyzerService 有一个 HeapAnalyzer 使用HAHA 可达性分析来解析这个文件。
         5.得益于唯一的 reference key, HeapAnalyzer 找到 KeyedWeakReference，定位内存泄露。
         6.HeapAnalyzer 计算 到 GC roots 的最短强引用路径，并确定是否是泄露。如果是的话，建立导致泄露的引用链。
         7.引用链传递到 APP 进程中的 DisplayLeakService， 并以通知的形式展示出来。
@@ -56,9 +56,32 @@
         8.显示：显示结果，可能需要做些动画（淡入动画，crossFade等）。
      2、缓存机制？
         Glide的缓存机制，主要分为2种缓存，一种是内存缓存，一种是磁盘缓存。
-        使用内存缓存的原因：防止应用重复将图片读入到内存，造成内存资源浪费。
-        使用磁盘缓存的原因：防止应用重复的从网络或者其他地方下载和读取数据。
-        正式因为有着这两种缓存的结合，才构成了Glide极佳的缓存效果。
+        使用内存缓存的原因：防止应用重复将图片读入到内存，造成内存资源浪费。setMemoryCache
+        使用磁盘缓存的原因：防止应用重复的从网络或者其他地方下载和读取数据。setDiskCache
+          GlideApp.with(context)
+          .load(url)
+          .diskCacheStrategy(DiskCacheStrategy.ALL)
+          .dontAnimate()
+          .centerCrop()
+          .into(imageView);
+        /*默认的策略是DiskCacheStrategy.AUTOMATIC
+        DiskCacheStrategy有五个常量：
+        DiskCacheStrategy.ALL 使用DATA和RESOURCE缓存远程数据，仅使用RESOURCE来缓存本地数据。
+        DiskCacheStrategy.NONE 不使用磁盘缓存
+        DiskCacheStrategy.DATA 在资源解码前就将原始数据写入磁盘缓存
+        DiskCacheStrategy.RESOURCE 在资源解码后将数据写入磁盘缓存，即经过缩放等转换后的图片资源。
+        DiskCacheStrategy.AUTOMATIC 根据原始图片数据和资源编码策略来自动选择磁盘缓存策略。*/
+        正是因为有着这两种缓存的结合，才构成了Glide极佳的缓存效果。
+        GlideApp.with(context)
+        .load(url)
+        .skipMemoryCache(true)//跳过缓存，默认为false 
+        .dontAnimate()
+        .centerCrop()
+        .into(imageView);
+        //磁盘缓存清理（子线程）
+        GlideApp.get(context).clearDiskCache();
+        //内存缓存清理（主线程）
+        GlideApp.get(context).clearMemory();
      3、Glide内存缓存加载的流程
        1.首先去获取活动缓存，如果加载到则直接返回，没有则进入下一步
        2.接着去获取LRU缓存，在获取时会将其从LRU中删除并添加到活动缓存中
@@ -112,6 +135,11 @@
          
 七、retrofit
    实现原理：动态代码+注解+建造者+适配器模式
+
+   Retrofit用到的动态代理，并不能算是严格的代理模式。它只是利用了代理模式中invoke这一中转过程，来解析接口中的注解声明，
+   然后通过这些注解声明来创建一个请求类，最终再通过该请求类来发起请求。
+   也就是说，Retrofit所关注的重点在于如何创建invoke方法所返回的实例，
+   而普通的代理模式则在于控制接口实现类的访问。
    
 八、Matrix-ApkChecker 瘦身
   https://www.jianshu.com/p/3d5e6ebb7ae3

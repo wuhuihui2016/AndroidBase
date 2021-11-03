@@ -41,7 +41,8 @@
      （2）在系统内存不足的时候可能不会执行onStop方法，因此程序状态的保存、独占设备和动画的关闭、以及一些数据的保存最好在onPause中进行，但要注意不能太耗时。
    5.onStop方法和onDestroy方法有什么区别？
      onStop阶段Activity还没有被销毁，对象还在内存中，此时可以通过切换Activity再次回到该Activity，而onDestroy阶段Acivity被销毁
-   6.为什么切换Activity时各方法的执行次序是(A)onPause→(B)onCreate→(B)onStart→(B)onResume→(A)onStop而不是(A)onPause→(A)onStop→(B)onCreate→(B)onStart→(B)onResume
+   6.为什么切换Activity时各方法的执行次序是(A)onPause→(B)onCreate→(B)onStart→(B)onResume→(A)onStop
+                                  而不是(A)onPause→(A)onStop→(B)onCreate→(B)onStart→(B)onResume
      （1）一个Activity或多或少会占有系统资源，而在官方的建议中，onPause方法将会释放掉很多系统资源，为切换Activity提供流畅性的保障，而不需要再等多两个阶段，这样做切换更快。
      （2）按照生命周期图的表示，如果用户在切换Activity的过程中再次切回原Activity，是在onPause方法后直接调用onResume方法的，这样比onPause→onStop→onRestart→onStart→onResume要快得多。
    7.与生命周期密切相关的onSaveInstanceState方法和onRestoreInstanceState方法在什么时候执行？
@@ -72,13 +73,13 @@
     </intent-filter>
 
 六、Activity启动流程【https://blog.csdn.net/qian520ao/article/details/78156214】
-   1.Launcher通知AMS启动淘宝APP的MainActivity，也就是清单文件设置启动的Activity。
+   1.Launcher通知AMS启动APP的MainActivity，也就是清单文件设置启动的Activity。
    2.AMS记录要启动的Activity信息，并且通知Launcher进入pause状态。
-   3.Launcher进入pause状态后，通知AMS已经paused了，可以启动淘宝了。
-   4.淘宝app未开启过，所以AMS启动新的进程，并且在新进程中创建ActivityThread对象，执行其中的main函数方法。
-   5.淘宝app主线程启动完毕后通知AMS，并传入applicationThread以便通讯。
-   6.AMS通知淘宝绑定Application并启动MainActivity。
-   7.淘宝启动MainActivitiy，并且创建和关联Context,最后调用onCreate方法
+   3.Launcher进入pause状态后，通知AMS已经paused了，可以启动了。
+   4.app未开启过，所以AMS启动新的进程，并且在新进程中创建ActivityThread对象，执行其中的main函数方法。
+   5.app主线程启动完毕后通知AMS，并传入applicationThread以便通讯。
+   6.AMS通知绑定Application并启动MainActivity。
+   7.启动MainActivitiy，并且创建和关联Context,最后调用onCreate方法
 
    attach方法【https://www.jianshu.com/p/af6824588d9b】
    Activity.attach创建了 PhoneWindow ，并给 PhoneWindow 绑定了管理器 WindowManage ，这里 window，WindowManage 就初始化好了

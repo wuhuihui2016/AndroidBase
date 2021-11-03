@@ -1,4 +1,7 @@
-# Hashmap 【扩展阅读】 https://www.cnblogs.com/Young111/p/11519952.html
+# Hashmap 
+###【扩展阅读】 https://www.cnblogs.com/Young111/p/11519952.html
+###【MyMVVM\others-java\src\main\java\com\whh\others\collection\HashMap.md】
+
 HashMap基于AbstractMap类，实现了Map、Cloneable（能被克隆）、Serializable（支持序列化）接口； 非线程安全；
 允许存在一个为null的key和任意个为null的value；采用链表散列的数据结构，即数组和链表的结合；初始容量为16，填充因子默认为0.75，扩容时是当前容量翻倍，即2capacity
 
@@ -37,6 +40,10 @@ Hashtable基于Map接口和Dictionary类；线程安全，开销比HashMap大，
   所有键值对重新进行计算和写入新的数组，之后指向新生成的数组。当多个线程同时检测到hashmap需要扩容的时候就会同时调用resize操作，
   各自生成新的数组并rehash后赋给该map底层的数组table，结果最终只有最后一个线程生成的新数组被赋给table变量，其他线程的均会丢失。
   而且当某些线程已经完成赋值而其他线程刚开始的时候，就会用已经被赋值的table作为原始数组，这样也会有问题。扩容的时候 可能会引发链表形成环状结构
+
+HashMap的线程不安全主要体现在：
+1.在JDK1.7中，当并发执行扩容操作时会造成环形链和数据丢失的情况。
+2.在JDK1.8中，在并发执行put操作时会发生数据覆盖的情况。
 
 三、如何实现HashMap线程同步？
   ①使用 java.util.Hashtable 类，此类是线程安全的。

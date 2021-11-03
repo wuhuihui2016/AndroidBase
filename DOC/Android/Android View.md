@@ -147,6 +147,8 @@
         基于RecyclerView实现。这意味着RecyclerView的优点将会被ViewPager2所继承。
         支持竖直滑动。只需要一个参数就可以改变滑动方向。
         支持关闭用户输入。通过setUserInputEnabled来设置是否禁止用户滑动页面。
+        FragmentStatePagerAdapter 被 FragmentStateAdapter 替代。
+        addPageChangeListener 被 registerOnPageChangeCallback替代
         支持通过编程方式滚动。通过fakeDragBy(offsetPx)代码模拟用户滑动页面。
         CompositePageTransformer 支持同时添加多个PageTransformer。
         支持DiffUtil ，可以添加数据集合改变的item动画。
@@ -180,7 +182,7 @@
       
       ViewPager2 实现懒加载：
           方法一：使用setUserVisibleHint(); 在AndroidX已被废弃，因此不能依靠该方法判断Fragment是否可见；
-          方法二：
+          方法二：设置ViewPager的offscreenPageLimit
 
 八、androidx.constraintlayout.widget.ConstraintLayout
     dependencies {
@@ -229,6 +231,15 @@
    有两个绘图区域，一个是bitmap的canvas另一个是当前view的canvas。
    先将图形绘制在bitmap上，然后将bitmap绘制在view上，也就是说，我们在view上看到的效果其实就是bitmap上的内容。
    好处：1.提高绘图性能; 2.可以在屏幕上展示绘图的过程; 3.保存绘制的历史
+
+十二、Android 渲染机制
+     Android系统每隔16ms发出VSYNC(Vertical Synchronization 垂直同步)信号，触发对UI进行渲染，
+     在Android 4.1(JB)中已经开始引入VSync机制。CPU和GPU的处理时间因为各种原因都大于一个VSync的间隔（16.6ms），导致了卡顿。
+     渲染操作通常依赖于两个核心组件：CPU与GPU。CPU负责包括Measure，Layout，Record，Execute的计算操作，GPU 负责Rasterization(栅格化)操作。
+
+对于大多数手机的屏幕刷新频率是60hz，也就是如果在1000/60=16.67ms内没有把这一帧的任务执行完毕，就会发生丢帧的现象，丢帧是造成界面卡顿的直接原因，渲染操作通常依赖于两个核心组件：CPU与GPU。CPU负责包括Measure，Layout等计算操作，GPU负责Rasterization(栅格化)操作(所谓栅格化就是将矢量图形转换为位图的过程，手机上显示是按照一个个像素来显示的，栅格化再普通一些的说法就是将一个Button,TextView等组件拆分到一个个像素上去显示)。
+
+UI渲染优化的目的就是减轻CPU,GPU的压力，除去不必要的操作，保证每帧16ms以内处理完所有的CPU与GPU的计算，绘制，渲染等等操作，使UI顺滑，流畅的展示出来。
 
 
 

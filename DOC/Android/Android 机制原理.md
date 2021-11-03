@@ -79,6 +79,15 @@
    点击桌面图标，launcher进程启动主Activity以Binder方式发送给AMS服务，交付给ActivityManagerService
    处理Intent和flag信息，通过prepareMainLooper()方法loop处理消息
 
+①点击桌面App图标，Launcher进程采用Binder IPC向system_server进程发起startActivity请求；
+②system_server进程接收到请求后，向zygote进程发送创建进程的请求；
+③Zygote进程fork出新的子进程，即App进程；
+④App进程，通过Binder IPC向sytem_server进程发起attachApplication请求；
+⑤system_server进程在收到请求后，进行一系列准备工作后，再通过binder IPC向App进程发送scheduleLaunchActivity请求；
+⑥App进程的binder线程（ApplicationThread）在收到请求后，通过handler向主线程发送LAUNCH_ACTIVITY消息；
+⑦主线程在收到Message后，通过发射机制创建目标Activity，并回调Activity.onCreate()等方法。
+⑧到此，App便正式启动，开始进入Activity生命周期，执行完onCreate/onStart/onResume方法，UI渲染结束后便可以看到App的主界面。
+
 八、插件化、热修复、组件化
    解除代码耦合，插件支持热插拔，静默升级，从根本上解决65k属性和方法的bug，进行自定义classLoader。
    插件化和热修复都是动态加载技术，使用场景不同，热修复为解决线上问题或者小功能更新，插件化解决应用上的大问题。
@@ -148,10 +157,20 @@
     FLV：文件小，加载速度快，用于网络观看视频。
     MP4：音视频压缩编码标准。
 
-十五、Serializable 序列化接口，开销大，建议使用，java方法，在序列化的时候会产生大量的临时对象，从而引起频繁的GC；
+十五、Serializable 序列化接口，开销大，建议使用，java方法，在序列化的时候会产生大量的临时变量，从而引起频繁的GC；
         注意：Intent 传递 Serializable 对象时，被传递的 Serializable 对象里面的自定义成员对象也要实现Serializable接口，
              否则出现 java.lang.RuntimeException: Parcelable encountered IOException writing serializable object 异常。
      Parcelelable 使用麻烦，效率高，多用于内存，Android方法，性能比Serializeble高，Parcelable不能使用在要将数据存储在硬盘上的情况。
+    【选型】
+       1）在使用内存的时候，Parcelable比Serializable性能高，所以推荐使用Parcelable。
+       2）Serializable在序列化的时候会产生大量的临时变量，从而引起频繁的GC。
+       3）Parcelable不能使用在要将数据存储在磁盘上的情况，因为Parcelable不能很好的保证数据的持续性在外界有变化的情况下。尽管Serializable效率低点，但此时还是建议使用Serializable 。
+       4）Serializable是Java中的序列化接口，其使用起来简单但是开销很大，序列化和反序列化过程需要大量I\O操作。
+         而Parcelable是Android中序列化方式，更适合用在Android平台，使用起来稍复杂。效率很高，这也是Android推荐的序列化方式，因此在Android平台上首选Parcelable。
+    【引申提问】Android Intent传递对象为什么要序列化？
+       a.永久性保存对象，保存对象的字节序列到本地文件中
+       b.对象可以在网络中传输
+       c.对象可以在IPC之间传递（进程间通信）
 
 十六、Service启动方式和生命周期
    ①startService()：开启，调用者退出后Service仍在；
@@ -237,6 +256,20 @@
     【扩展】用List list = new ArrayList(Arrays.asList(array)); 替换 List list = Arrays.asList(array);
     替换原因：asList(array) 抛出异常：Exception in thread "main" java.lang.UnsupportedOperationException，
         由于asList产生的集合并没有重写add,remove等方法，所以它会调用父类AbstractList的方法，而父类的方法中抛出的却是异常信息
+
+   ArrayList可以实现快速随机访问
+   ArrayList新增元素
+        方法有两种，一种是直接将元素加到数组的末尾，另外一种是添加元素到任意位置。
+        在添加元素之前，都会先确认容量大小，如果容量够大，就不用进行扩容；
+        如果容量不够大，就会按照原来数组的1.5倍大小进行扩容，在扩容之后需要将数组复制到新分配的内存地址。
+        添加元素到任意位置，会导致在该位置后的所有元素都需要重新排列，而将元素添加到数组的末尾，
+        在没有发生扩容的前提下，是不会有元素复制排序过程的。
+   ArrayList删除元素
+        ArrayList在每一次有效的删除元素操作之后，都要进行数组的重组，并且删除的元素位置越靠前，数组重组的开销就越大。
+
+   LinkedList基于双向链表数据结构实现，由于LinkedList存储数据的内存地址是不连续的，而是通过指针来定位不连续地址，
+   因此，LinkedList不支持随机快速访问，LinkedList也就不能实现RandomAccess接口。
+   LinkedList 新增元素有多种，添加至末尾或任意位置，如果添加到位置，只会改变前后元素的前后指针，指针将会指向添加的新元素，因此LinkedList新增元素快。
 
 二十七、AIDL(Android Interface definition language)
     Android中IPC（Inter-Process Communication）方式中的一种。AIDL的作用跨进程通信，是让你可以在自己的APP里绑定一个其他APP的service，使得你的APP可以和其他APP交互。
